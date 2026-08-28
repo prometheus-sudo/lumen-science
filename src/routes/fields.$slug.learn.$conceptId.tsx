@@ -4,8 +4,7 @@ import { toast } from "sonner";
 import { RichText } from "@/components/rich-text";
 import { MobileNav, SiteFooter, SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
-import { getConcept } from "@/lib/sciences";
-import { videosForConcept, youtubeWatchUrl } from "@/lib/topic-videos";
+import { getConcept, getField } from "@/lib/sciences";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { getProfile, type Profile } from "@/lib/server/profile";
 import { explainConcept, markConceptProgress } from "@/lib/server/explain";
@@ -18,6 +17,7 @@ export const Route = createFileRoute("/fields/$slug/learn/$conceptId")({
 function LearnPage() {
   const { slug, conceptId } = Route.useParams();
   const found = getConcept(slug, conceptId);
+  const fieldOnly = getField(slug);
   const { user, isPending } = useCurrentUserState();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [adapted, setAdapted] = useState<string | null>(null);
@@ -32,13 +32,23 @@ function LearnPage() {
   }, [user]);
 
   if (!found) {
+    const known = fieldOnly?.concepts.map((c) => c.id).join(", ") ?? "(no field)";
     return (
       <div className="flex min-h-dvh flex-col">
         <SiteHeader solid />
         <main className="mx-auto max-w-xl px-4 py-20 text-center">
           <h1 className="font-display text-3xl">Lesson not found</h1>
-          <Link to="/explore" className="mt-4 inline-block text-sm text-muted">
-            Back to the sciences
+          <p className="mt-3 text-sm text-muted">
+            No lesson <code className="text-fg">{conceptId}</code> in{" "}
+            <code className="text-fg">{slug}</code>.
+          </p>
+          <p className="mt-2 text-xs text-subtle break-all">Known ids: {known}</p>
+          <Link
+            to="/fields/$slug"
+            params={{ slug }}
+            className="mt-6 inline-block text-sm text-primary hover:underline"
+          >
+            Back to {fieldOnly?.name ?? slug}
           </Link>
         </main>
       </div>
@@ -48,6 +58,8 @@ function LearnPage() {
   const { field, concept } = found;
   const levelLabel = LEARNING_LEVELS.find((l) => l.id === profile?.learningLevel)?.label;
   const regionLabel = REGIONS.find((r) => r.id === profile?.region)?.label;
+  const paragraphs = (concept.summary || "").split(/\n\n+/).filter(Boolean);
+  const keyIdeas = concept.keyIdeas ?? [];
 
   async function adapt() {
     if (!user) return;
@@ -94,17 +106,41 @@ function LearnPage() {
         >
           {field.name}
         </Link>
-        <h1 className="mt-4 font-display text-4xl tracking-tight">{concept.title}</h1>
+        {concept.module ? (
+          <p className="mt-2 text-xs tracking-[0.14em] text-subtle uppercase">{concept.module}</p>
+        ) : null}
+        <h1 className="mt-2 font-display text-4xl tracking-tight">{concept.title}</h1>
         <p className="mt-3 text-sm text-muted">{concept.whyItMatters}</p>
 
         <article className="mt-10">
-          <h2 className="text-xs font-medium tracking-[0.16em] text-muted uppercase">
-            Core account
-          </h2>
-          <p className="mt-3 text-base leading-relaxed">{concept.summary}</p>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-xs font-medium tracking-[0.16em] text-muted uppercase">
+              Core lesson
+            </h2>
+            {concept.minutes ? (
+              <span className="text-xs text-subtle">~{concept.minutes} min read</span>
+            ) : null}
+          </div>
+          <div className="mt-4 space-y-4 text-base leading-relaxed">
+            {paragraphs.length > 0 ? (
+              paragraphs.map((para, i) => <p key={i}>{para}</p>)
+            ) : (
+              <p className="text-muted">Lesson text is not available for this topic yet.</p>
+            )}
+          </div>
+          {keyIdeas.length > 0 ? (
+            <div className="mt-8">
+              <h3 className="text-xs font-medium tracking-[0.16em] text-muted uppercase">
+                Key ideas
+              </h3>
+              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed">
+                {keyIdeas.map((idea) => (
+                  <li key={idea}>{idea}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </article>
-
-        <VideoLessons fieldSlug={field.slug} conceptId={concept.id} />
 
         <section className="mt-12 rounded-lg border border-border bg-surface p-5 sm:p-6">
           <h2 className="font-display text-2xl tracking-tight">Written for you</h2>
@@ -156,51 +192,5 @@ function LearnPage() {
       <SiteFooter />
       <MobileNav />
     </div>
-  );
-}
-
-function VideoLessons({ fieldSlug, conceptId }: { fieldSlug: string; conceptId: string }) {
-  const videos = videosForConcept(fieldSlug, conceptId);
-  if (videos.length === 0) return null;
-
-  return (
-    <section className="mt-12">
-      <h2 className="text-xs font-medium tracking-[0.16em] text-muted uppercase">
-        Video lessons
-      </h2>
-      <p className="mt-2 text-sm text-muted">
-        Curated from Veritasium, The Efficient Engineer, and The Organic Chemistry Tutor —
-        free to watch on YouTube.
-      </p>
-      <ul className="mt-5 space-y-3">
-        {videos.map((v) => (
-          <li
-            key={v.youtubeId}
-            className="rounded-lg border border-border bg-surface p-4 sm:p-5"
-          >
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <a
-                href={youtubeWatchUrl(v.youtubeId)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-fg hover:underline"
-              >
-                {v.title}
-              </a>
-              <span className="text-xs tracking-wide text-muted uppercase">{v.channel}</span>
-            </div>
-            {v.note ? <p className="mt-2 text-sm leading-relaxed text-muted">{v.note}</p> : null}
-            <a
-              href={youtubeWatchUrl(v.youtubeId)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-block text-sm text-primary hover:underline"
-            >
-              Watch on YouTube →
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }
