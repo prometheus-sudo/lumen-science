@@ -1,30 +1,60 @@
 # Lumen — free science academy
 
-A free, open science learning platform covering twelve fields: physics, chemistry, biology, astronomy, earth science, mathematics, computer science, medicine, neuroscience, ecology, materials, and psychology.
+**Repo:** https://github.com/prometheus-sudo/lumen-science  
+**Full base scaffold:** https://github.com/prometheus-sudo/lion-eagle-pepper-topaz
 
-**Repo:** https://github.com/prometheus-sudo/lumen-science
+A free science learning platform: lessons across twelve fields, adaptive language by level and region, AI tutor + syllabi (login), and **open-access literature only** (arXiv, PubMed Central, DOAJ, PLOS, Zenodo, Crossref CC, preprints).
 
-## Features
+## What’s already on this repo (OA layer + config)
 
-- Lessons across the sciences with adaptive language by learning level and region
-- **Open-access literature only** — federated search across arXiv, PubMed Central / Europe PMC, DOAJ, PLOS, Zenodo, Creative Commons (Crossref), and life-science preprints
-- Library (`/library`) for free-text OA paper search
-- AI tutor (Grok) and personalized syllabi (login required)
-- Entirely free — no paywalled content fetched
+- `src/lib/literature.ts` — federated OA search
+- `src/lib/oa-sources.ts` — source list + policy
+- `src/lib/server/papers.ts` — cached paper APIs
+- `migrations/0003_open_library.sql` — paper cache + topic lessons
+- `src/routes/library.tsx` + `src/components/paper-card.tsx` — Library UI
+- `src/components/site-header.tsx` — Library in nav
+- Config: `package.json`, `tsconfig.json`, utils, router, migrations 0001–0003
 
-## Stack
+## Get a full runnable app (one command)
 
-TanStack Start + React 19 + Tailwind v4 + Better Auth + Postgres/PGLite + xAI (Grok)
-
-## Local development
+The complete app (auth, tutor, syllabi, field lessons, UI) is in the prior snapshot. Merge it with this OA layer:
 
 ```bash
+git clone https://github.com/prometheus-sudo/lion-eagle-pepper-topaz.git lumen
+cd lumen
+git remote add lumen-oa https://github.com/prometheus-sudo/lumen-science.git
+git fetch lumen-oa
+git checkout lumen-oa/main -- \
+  src/lib/literature.ts \
+  src/lib/oa-sources.ts \
+  src/lib/server/papers.ts \
+  src/lib/og/site.json \
+  src/routes/library.tsx \
+  src/components/paper-card.tsx \
+  src/components/site-header.tsx \
+  migrations/0003_open_library.sql \
+  README.md \
+  package.json
+
 npm install
 npm run dev
 ```
 
-Requires Node 22+. Preview binds to `0.0.0.0:8080`.
+Then optionally publish the combined tree back to this repo:
+
+```bash
+git remote set-url origin https://github.com/prometheus-sudo/lumen-science.git
+git add -A
+git commit -m "Full Lumen app + open-access literature layer"
+git push -u origin main
+```
+
+Requires Node 22+. Dev server: `0.0.0.0:8080`.
+
+## Stack
+
+TanStack Start · React 19 · Tailwind v4 · Better Auth · Postgres/PGLite · xAI Grok
 
 ## License
 
-Application code is yours under this repository. Literature is linked from third-party open archives; respect each source’s license.
+App code is yours in this repository. Linked literature remains under each archive’s license.
