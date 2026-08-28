@@ -1,0 +1,101 @@
+import { Link } from "@tanstack/react-router";
+import { UserButton } from "@/lib/auth/gates";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { SiteMark } from "@/components/site-mark";
+import { cn } from "@/lib/utils";
+
+const links = [
+  { to: "/explore", label: "Sciences" },
+  { to: "/library", label: "Library" },
+  { to: "/tutor", label: "Tutor" },
+  { to: "/syllabus", label: "Syllabus" },
+] as const;
+
+export function SiteHeader({ solid = false }: { solid?: boolean }) {
+  const { user, isPending } = useCurrentUserState();
+
+  return (
+    <header
+      className={cn(
+        "sticky top-0 z-30 border-b border-border/80 backdrop-blur-md",
+        solid ? "bg-bg/95" : "bg-bg/80",
+      )}
+    >
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
+        <Link to="/" className="flex items-center gap-2 text-fg">
+          <SiteMark className="size-6" />
+          <span className="font-display text-lg tracking-tight">Lumen</span>
+        </Link>
+        <nav className="hidden items-center gap-1 sm:flex">
+          {links.map((l) => (
+            <Link
+              key={l.to}
+              to={l.to}
+              className="rounded-sm px-3 py-2 text-sm text-muted transition-colors duration-150 hover:text-fg"
+            >
+              {l.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="flex min-h-8 min-w-24 items-center justify-end">
+          {isPending ? (
+            <div className="h-8 w-24 animate-pulse rounded-full bg-fg/8" />
+          ) : user ? (
+            <div className="flex items-center gap-3">
+              <Link
+                to="/account"
+                className="hidden text-sm text-muted hover:text-fg sm:inline"
+              >
+                Account
+              </Link>
+              <div className="max-w-[14rem] truncate text-fg [&_span.text-sm]:hidden sm:[&_span.text-sm]:inline">
+                <UserButton />
+              </div>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="inline-flex h-9 items-center rounded-sm bg-primary px-3 text-sm font-medium text-primary-fg"
+            >
+              Sign in
+            </Link>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+export function SiteFooter() {
+  return (
+    <footer className="border-t border-border/80">
+      <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <p>Lumen is free. Lessons cite established research. Nothing is paywalled.</p>
+        <p className="text-subtle">Open literature · Tutor via Grok</p>
+      </div>
+    </footer>
+  );
+}
+
+export function MobileNav() {
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden">
+      <div className="grid grid-cols-4">
+        {[
+          { to: "/explore" as const, label: "Sciences" },
+          { to: "/tutor" as const, label: "Tutor" },
+          { to: "/syllabus" as const, label: "Syllabus" },
+          { to: "/account" as const, label: "Account" },
+        ].map((l) => (
+          <Link
+            key={l.to}
+            to={l.to}
+            className="flex h-12 items-center justify-center text-xs font-medium text-muted hover:text-fg"
+          >
+            {l.label}
+          </Link>
+        ))}
+      </div>
+    </nav>
+  );
+}
