@@ -2,39 +2,32 @@ import type { Concept, ScienceField } from "./sciences-types";
 export type { Concept, FieldSlug, LandmarkPaper, ScienceField } from "./sciences-types";
 export { FIELD_SLUGS } from "./sciences-types";
 
+import physics from "./curriculum/physics";
+import chemistry from "./curriculum/chemistry";
+import biology from "./curriculum/biology";
+import astronomy from "./curriculum/astronomy";
+import earth from "./curriculum/earth";
+import mathematics from "./curriculum/mathematics";
+import computing from "./curriculum/computing";
+import medicine from "./curriculum/medicine";
+import neuroscience from "./curriculum/neuroscience";
 import ecology from "./curriculum/ecology";
-
-/** Temporary stub until full module files are published */
-function stub(
-  slug: ScienceField["slug"],
-  name: string,
-  tagline: string,
-): ScienceField {
-  return {
-    slug,
-    name,
-    tagline,
-    overview: `${name} curriculum is loading. Pull the latest lumen-science curriculum modules to unlock full lessons.`,
-    searchQuery: `${name} review open access`,
-    subfields: [],
-    concepts: [],
-    landmarks: [],
-  };
-}
+import materials from "./curriculum/materials";
+import psychology from "./curriculum/psychology";
 
 export const FIELDS: ScienceField[] = [
-  stub("physics", "Physics", "Matter, energy, space, and time."),
-  stub("chemistry", "Chemistry", "Atoms, bonds, and transformations of matter."),
-  stub("biology", "Biology", "Life as chemistry with history."),
-  stub("astronomy", "Astronomy", "Planets, stars, galaxies, and the universe."),
-  stub("earth", "Earth science", "Rock, water, air, and life as one system."),
-  stub("mathematics", "Mathematics", "Structure, proof, and quantity."),
-  stub("computing", "Computer science", "Information, algorithms, and systems."),
-  stub("medicine", "Medicine", "Health, disease, and care."),
-  stub("neuroscience", "Neuroscience", "Nervous systems from cells to mind."),
+  physics,
+  chemistry,
+  biology,
+  astronomy,
+  earth,
+  mathematics,
+  computing,
+  medicine,
+  neuroscience,
   ecology,
-  stub("materials", "Materials science", "Structure, properties, and processing."),
-  stub("psychology", "Psychology", "Mind, brain, and behavior."),
+  materials,
+  psychology,
 ];
 
 export function getField(slug: string): ScienceField | undefined {
