@@ -4,15 +4,22 @@ A free, open science learning platform covering twelve fields: physics, chemistr
 
 ## What is new (vs prior App Builder snapshot)
 
-- **Open-access literature only** — federated search across arXiv, PubMed Central / Europe PMC, DOAJ, PLOS, Zenodo, Creative Commons (Crossref), and life-science preprints.
+- **Open-access literature only** — federated search across:
+  - arXiv
+  - PubMed Central / Europe PMC
+  - DOAJ
+  - PLOS
+  - Zenodo
+  - Creative Commons records via Crossref
+  - Life-science preprints (bioRxiv / medRxiv via Europe PMC)
 - **No paywalled PDFs** are fetched.
 - **Library** route (`/library`) for free-text OA search.
-- **Paper cache** + **topic lessons** schema (`migrations/0003_open_library.sql`).
+- **Paper cache** + optional **topic lessons** schema (`migrations/0003_open_library.sql`).
 - Lessons, tutor, syllabi, auth, and level/region adaptation remain free.
 
 ## Stack
 
-TanStack Start + React 19 + Tailwind v4 + Better Auth + Postgres/PGLite + xAI (Grok).
+TanStack Start + React 19 + Tailwind v4 + Better Auth + Postgres/PGLite + xAI (Grok) for adaptive lessons and the tutor.
 
 ## Local development
 
@@ -21,8 +28,12 @@ npm install
 npm run dev
 ```
 
-Node 22+. Preview binds to `0.0.0.0:8080`.
+Requires Node 22+. Preview binds to `0.0.0.0:8080`.
 
 ## Related
 
 Prior snapshot: [lion-eagle-pepper-topaz](https://github.com/prometheus-sudo/lion-eagle-pepper-topaz)
+
+## License
+
+Application code is yours under this repository. Literature is linked from third-party open archives; respect each source’s license.
