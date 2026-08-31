@@ -9,6 +9,7 @@ const links = [
   { to: "/library", label: "Library" },
   { to: "/tutor", label: "Tutor" },
   { to: "/syllabus", label: "Syllabus" },
+  { to: "/teach", label: "Teach" },
 ] as const;
 
 export function SiteHeader({ solid = false }: { solid?: boolean }) {
@@ -31,31 +32,27 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
             <Link
               key={l.to}
               to={l.to}
-              className="rounded-sm px-3 py-2 text-sm text-muted transition-colors duration-150 hover:text-fg"
+              className="rounded-md px-3 py-1.5 text-sm text-muted transition-colors hover:bg-surface hover:text-fg"
             >
               {l.label}
             </Link>
           ))}
         </nav>
-        <div className="flex min-h-8 min-w-24 items-center justify-end">
-          {isPending ? (
-            <div className="h-8 w-24 animate-pulse rounded-full bg-fg/8" />
-          ) : user ? (
-            <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {isPending ? null : user ? (
+            <>
               <Link
                 to="/account"
                 className="hidden text-sm text-muted hover:text-fg sm:inline"
               >
                 Account
               </Link>
-              <div className="max-w-[14rem] truncate text-fg [&_span.text-sm]:hidden sm:[&_span.text-sm]:inline">
-                <UserButton />
-              </div>
-            </div>
+              <UserButton />
+            </>
           ) : (
             <Link
               to="/login"
-              className="inline-flex h-9 items-center rounded-sm bg-primary px-3 text-sm font-medium text-primary-fg"
+              className="rounded-full bg-fg px-4 py-1.5 text-sm font-medium text-bg"
             >
               Sign in
             </Link>
@@ -68,34 +65,31 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border/80">
-      <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <p>Lumen is free. Lessons cite established research. Nothing is paywalled.</p>
-        <p className="text-subtle">Open literature · Tutor via Grok</p>
-      </div>
+    <footer className="border-t border-border py-8 text-center text-xs text-subtle">
+      Lumen Science Academy — free science learning grounded in open research.
     </footer>
   );
 }
 
 export function MobileNav() {
+  const links = [
+    { to: "/explore", label: "Sciences" },
+    { to: "/library", label: "Library" },
+    { to: "/tutor", label: "Tutor" },
+    { to: "/syllabus", label: "Syllabus" },
+    { to: "/teach", label: "Teach" },
+  ] as const;
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden">
-      <div className="grid grid-cols-4">
-        {[
-          { to: "/explore" as const, label: "Sciences" },
-          { to: "/tutor" as const, label: "Tutor" },
-          { to: "/syllabus" as const, label: "Syllabus" },
-          { to: "/account" as const, label: "Account" },
-        ].map((l) => (
-          <Link
-            key={l.to}
-            to={l.to}
-            className="flex h-12 items-center justify-center text-xs font-medium text-muted hover:text-fg"
-          >
-            {l.label}
-          </Link>
-        ))}
-      </div>
+    <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-bg/95 backdrop-blur-md sm:hidden">
+      {links.map((l) => (
+        <Link
+          key={l.to}
+          to={l.to}
+          className="flex-1 py-3 text-center text-xs text-muted"
+        >
+          {l.label}
+        </Link>
+      ))}
     </nav>
   );
 }
