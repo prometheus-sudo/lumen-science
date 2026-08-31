@@ -22,6 +22,10 @@ export type Concept = {
   whyItMatters: string;
   summary: string;
   keyIdeas: string[];
+  objectives?: string[];
+  terms?: { term: string; definition: string }[];
+  checkQuestions?: string[];
+  pitfalls?: string[];
   minutes?: number;
 };
 
