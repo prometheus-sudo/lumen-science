@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MobileNav, SiteFooter, SiteHeader } from "@/components/site-header";
+import { useEffect, useState } from "react";
 import { getConcept, getField } from "@/lib/sciences";
+import { getTeacherLesson } from "@/lib/server/teacher-lessons";
+import type { Concept } from "@/lib/sciences-types";
 
 export const Route = createFileRoute("/fields/$slug/learn/$conceptId")({
   component: LearnPage,
@@ -8,8 +11,40 @@ export const Route = createFileRoute("/fields/$slug/learn/$conceptId")({
 
 function LearnPage() {
   const { slug, conceptId } = Route.useParams();
-  const found = getConcept(slug, conceptId);
+  const builtIn = getConcept(slug, conceptId);
   const fieldOnly = getField(slug);
+  const [teacherConcept, setTeacherConcept] = useState<Concept | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getTeacherLesson({ data: { fieldSlug: slug, conceptId } })
+      .then((c) => {
+        if (!cancelled) setTeacherConcept(c);
+      })
+      .catch(() => {
+        if (!cancelled) setTeacherConcept(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, conceptId]);
+
+  const concept = teacherConcept ?? builtIn?.concept ?? null;
+  const field = builtIn?.field ?? fieldOnly;
+  const found = concept && field ? { field, concept } : null;
+
+  if (!loaded && !builtIn) {
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <SiteHeader solid />
+        <main className="mx-auto max-w-xl px-4 py-20 text-center text-muted">Loading lesson…</main>
+      </div>
+    );
+  }
 
   if (!found) {
     return (
@@ -32,7 +67,6 @@ function LearnPage() {
     );
   }
 
-  const { field, concept } = found;
   const ideas = concept.keyIdeas ?? [];
   const objectives = concept.objectives ?? [];
   const terms = concept.terms ?? [];
@@ -122,7 +156,7 @@ function LearnPage() {
         ) : null}
 
         <p className="mt-12 text-sm text-muted">
-          Core lessons are free. Sign in later for level-adapted explanations and the tutor.
+          Core lessons are free. Teachers can publish longer articles from Teach. Sign in for level-adapted help.
         </p>
       </main>
       <SiteFooter />
