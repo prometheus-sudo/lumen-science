@@ -25,6 +25,37 @@ export type LiteratureWork = {
 const UA = "Lumen Science Academy (mailto:lumen@grok.me)";
 const TIMEOUT_MS = 8000;
 
+/** Normalize any authors field from APIs into a display string. */
+function formatAuthors(input: unknown, max = 6): string {
+  if (input == null) return "";
+  if (typeof input === "string") {
+    return input
+      .split(/[,;]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, max)
+      .join(", ");
+  }
+  if (Array.isArray(input)) {
+    const names = input
+      .map((a) => {
+        if (typeof a === "string") return a.trim();
+        if (a && typeof a === "object") {
+          const o = a as Record<string, unknown>;
+          if (typeof o.name === "string") return o.name.trim();
+          const given = typeof o.given === "string" ? o.given : "";
+          const family = typeof o.family === "string" ? o.family : "";
+          return [given, family].filter(Boolean).join(" ").trim();
+        }
+        return "";
+      })
+      .filter(Boolean)
+      .slice(0, max);
+    return names.join(", ");
+  }
+  return "";
+}
+
 function stripHtml(s: string): string {
   return s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -32,11 +63,11 @@ function stripHtml(s: string): string {
 function decodeXml(s: string): string {
   return s
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/&/g, "&")
-    .replace(/"/g, '"')
-    .replace(/'/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -172,7 +203,7 @@ function mapEpmc(r: EpmcResult, source: LiteratureSource): LiteratureWork | null
     doi,
     url,
     pdfUrl,
-    authors: (r.authorString ?? "").split(",").slice(0, 6).join(",").trim(),
+    authors: formatAuthors(r.authorString),
     abstract: stripHtml(r.abstractText ?? "").slice(0, 1400),
     venue: r.journalTitle ?? (source === "Preprint" ? "Preprint" : "Europe PMC"),
     source,
@@ -210,7 +241,7 @@ async function searchDoaj(query: string, rows: number): Promise<LiteratureWork[]
         title?: string;
         year?: string | number;
         abstract?: string;
-        author?: { name?: string }[];
+        author?: { name?: string }[] | string;
         journal?: { title?: string };
         identifier?: { id?: string; type?: string }[];
         link?: { url?: string; type?: string }[];
@@ -232,7 +263,7 @@ async function searchDoaj(query: string, rows: number): Promise<LiteratureWork[]
       doi,
       url: fulltext ?? (doi ? `https://doi.org/${doi}` : null),
       pdfUrl: fulltext && /\.pdf($|\?)/i.test(fulltext) ? fulltext : null,
-      authors: (b?.author ?? []).map((a) => a.name).filter(Boolean).slice(0, 6).join(", "),
+      authors: formatAuthors(b?.author),
       abstract: stripHtml(b?.abstract ?? "").slice(0, 1400),
       venue: b?.journal?.title ?? "DOAJ",
       source: "DOAJ",
@@ -253,8 +284,8 @@ async function searchPlos(query: string, rows: number): Promise<LiteratureWork[]
       docs?: {
         id?: string;
         title?: string;
-        author?: string[];
-        abstract?: string[];
+        author?: string[] | string;
+        abstract?: string[] | string;
         publication_date?: string;
         journal?: string;
         counter_total_all?: number;
@@ -266,6 +297,10 @@ async function searchPlos(query: string, rows: number): Promise<LiteratureWork[]
     const title = (d.title ?? "").trim();
     if (!title) continue;
     const doi = normalizeDoi(d.id);
+    const abstractRaw = d.abstract;
+    const abstract = Array.isArray(abstractRaw)
+      ? stripHtml(abstractRaw.join(" ")).slice(0, 1400)
+      : stripHtml(String(abstractRaw ?? "")).slice(0, 1400);
     out.push({
       id: doi ?? title.slice(0, 80),
       title,
@@ -274,8 +309,8 @@ async function searchPlos(query: string, rows: number): Promise<LiteratureWork[]
       doi,
       url: doi ? `https://doi.org/${doi}` : null,
       pdfUrl: doi ? `https://doi.org/${doi}` : null,
-      authors: (d.author ?? []).slice(0, 6).join(", "),
-      abstract: stripHtml((d.abstract ?? []).join(" ")).slice(0, 1400),
+      authors: formatAuthors(d.author),
+      abstract,
       venue: d.journal ?? "PLOS",
       source: "PLOS",
       license: "CC BY",
@@ -322,7 +357,7 @@ async function searchZenodo(query: string, rows: number): Promise<LiteratureWork
       doi,
       url: hit.links?.html ?? (doi ? `https://doi.org/${doi}` : null),
       pdfUrl: pdf,
-      authors: (hit.metadata?.creators ?? []).map((c) => c.name).filter(Boolean).slice(0, 6).join(", "),
+      authors: formatAuthors(hit.metadata?.creators),
       abstract: stripHtml(hit.metadata?.description ?? "").slice(0, 1400),
       venue: hit.metadata?.journal?.title ?? "Zenodo",
       source: "Zenodo",
@@ -371,11 +406,6 @@ async function searchCrossrefCc(query: string, rows: number): Promise<Literature
     }
     const doi = normalizeDoi(w.DOI);
     const pdf = w.link?.find((l) => (l["content-type"] ?? "").includes("pdf"))?.URL ?? null;
-    const authors = (w.author ?? [])
-      .slice(0, 6)
-      .map((a) => [a.given, a.family].filter(Boolean).join(" "))
-      .filter(Boolean)
-      .join(", ");
     out.push({
       id: doi ?? title.slice(0, 80),
       title,
@@ -384,7 +414,7 @@ async function searchCrossrefCc(query: string, rows: number): Promise<Literature
       doi,
       url: doi ? `https://doi.org/${doi}` : (w.URL ?? null),
       pdfUrl: pdf,
-      authors,
+      authors: formatAuthors(w.author),
       abstract: stripHtml(w.abstract ?? "").slice(0, 1400),
       venue: w["container-title"]?.[0] ?? "",
       source: "Crossref (CC)",
@@ -422,7 +452,6 @@ function mergeWorks(groups: LiteratureWork[][], limit: number): LiteratureWork[]
     .slice(0, limit);
 }
 
-/** Federated open-access literature search across arXiv, PMC, DOAJ, PLOS, Zenodo, CC Crossref. */
 export async function searchOpenLiterature(query: string, rows = 12): Promise<LiteratureWork[]> {
   const q = query.trim().slice(0, 200);
   if (!q) return [];
