@@ -7,7 +7,7 @@ const field = {
   name: "Ecology",
   tagline: "Organisms, environments, and systems they form.",
   overview:
-    "Ecology studies interactions among organisms and their environments. Energy flow, nutrient cycles, populations, communities, conservation, and climate links form the examinable core. Each lesson is written for secondary and first-year university depth: definitions, mechanisms, graphs, worked reasoning, and common pitfalls.",
+    "Ecology studies interactions among organisms and their environments. Energy flow, nutrient cycles, populations, communities, conservation, and climate links form the examinable core. Lessons are written for secondary and first-year university depth.",
   searchQuery: "ecology energy flow nutrient cycles population dynamics open access",
   subfields: ["Ecosystems", "Populations", "Communities", "Conservation", "Climate", "Applied"],
   concepts: [...ecologyConceptsA, ...ecologyConceptsB],
@@ -17,12 +17,6 @@ const field = {
       authors: "G. E. Hutchinson",
       year: 1957,
       significance: "Formalised the niche as an n-dimensional hypervolume; still structures ecological thought.",
-    },
-    {
-      title: "The strategy of ecosystem development",
-      authors: "E. P. Odum",
-      year: 1969,
-      significance: "Classic synthesis of succession, energy flow, and ecosystem development trends.",
     },
   ],
 } as ScienceField;
