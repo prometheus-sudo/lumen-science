@@ -2,13 +2,28 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { MobileNav, SiteFooter, SiteHeader } from "@/components/site-header";
 import { getConcept, getField } from "@/lib/sciences";
-import { getLongformLesson } from "@/lib/server/longform";
 import { getTeacherLesson } from "@/lib/server/teacher-lessons";
 import type { Concept } from "@/lib/sciences-types";
 
 export const Route = createFileRoute("/lesson/$slug/$conceptId")({
   component: LessonPage,
 });
+
+async function loadLongform(slug: string, conceptId: string) {
+  try {
+    const res = await fetch(`/longform/${slug}/${conceptId}.md`, { cache: "no-store" });
+    if (res.ok) {
+      const body = await res.text();
+      if (body && !body.trimStart().startsWith("<!")) {
+        const words = body.trim().split(/\s+/).filter(Boolean).length;
+        if (words > 50) return { body, words };
+      }
+    }
+  } catch {
+    /* fall through */
+  }
+  return null;
+}
 
 function LessonPage() {
   const { slug, conceptId } = Route.useParams();
@@ -21,22 +36,19 @@ function LessonPage() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([
-      getTeacherLesson({ data: { fieldSlug: slug, conceptId } }).catch(() => null),
-      getLongformLesson({ data: { fieldSlug: slug, conceptId } }).catch(() => ({
-        ok: false as const,
-        body: null as string | null,
-        words: 0,
-      })),
-    ]).then(([t, lf]) => {
+    (async () => {
+      const [t, lf] = await Promise.all([
+        getTeacherLesson({ data: { fieldSlug: slug, conceptId } }).catch(() => null),
+        loadLongform(slug, conceptId),
+      ]);
       if (cancelled) return;
       setTeacher(t);
-      if (lf && "ok" in lf && lf.ok && lf.body) {
+      if (lf) {
         setLongform(lf.body);
         setLongformWords(lf.words);
       }
       setLoaded(true);
-    });
+    })();
     return () => {
       cancelled = true;
     };
@@ -79,7 +91,7 @@ function LessonPage() {
     ? "Teacher lesson (overrides built-in)"
     : longform
       ? `Extended lesson · ~${longformWords.toLocaleString()} words`
-      : "Core summary (run node scripts/generate-longform.mjs for full text)";
+      : "Core summary only — longform not loaded";
   const ideas = concept.keyIdeas ?? [];
   const paragraphs = displayMarkdown.split(/\n\n+/).filter(Boolean);
 
@@ -105,9 +117,8 @@ function LessonPage() {
 
         {!longform && !teacher ? (
           <p className="mt-4 rounded-md border border-border bg-surface px-3 py-2 text-sm text-muted">
-            Full extended text is not on disk yet. In a terminal run:{" "}
-            <code className="text-fg">node scripts/generate-longform.mjs</code>, then refresh this
-            page.
+            Extended text not loaded. Run{" "}
+            <code className="text-fg">node scripts/publish-longform.mjs</code> then refresh.
           </p>
         ) : null}
 
@@ -115,20 +126,18 @@ function LessonPage() {
           <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Full lesson</h2>
           <div className="mt-4 space-y-4 text-base leading-relaxed">
             {paragraphs.map((p, i) => {
-              if (p.startsWith("# ")) {
+              if (p.startsWith("# "))
                 return (
                   <h2 key={i} className="pt-4 font-display text-2xl tracking-tight">
                     {p.replace(/^#+\s*/, "")}
                   </h2>
                 );
-              }
-              if (p.startsWith("## ")) {
+              if (p.startsWith("## "))
                 return (
                   <h3 key={i} className="pt-6 font-display text-xl tracking-tight">
                     {p.replace(/^#+\s*/, "")}
                   </h3>
                 );
-              }
               if (p === "---") return null;
               return (
                 <p key={i} className="whitespace-pre-wrap">
@@ -141,9 +150,7 @@ function LessonPage() {
 
         {!teacher && ideas.length > 0 ? (
           <section className="mt-12">
-            <h2 className="text-xs font-medium uppercase tracking-wide text-muted">
-              Key ideas (quick revision)
-            </h2>
+            <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Key ideas</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed">
               {ideas.map((idea) => (
                 <li key={idea}>{idea}</li>
@@ -151,14 +158,6 @@ function LessonPage() {
             </ul>
           </section>
         ) : null}
-
-        <p className="mt-12 text-sm text-muted">
-          Teachers can replace this text from{" "}
-          <Link to="/teach" className="underline">
-            Teach
-          </Link>{" "}
-          by publishing a lesson with the same field and concept id.
-        </p>
       </main>
       <SiteFooter />
       <MobileNav />
