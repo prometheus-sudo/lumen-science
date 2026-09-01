@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { UserButton } from "@/components/user-button";
+import { UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { SiteMark } from "@/components/site-mark";
+import { cn } from "@/lib/utils";
 
 const links = [
   { to: "/explore", label: "Sciences" },
@@ -15,17 +17,14 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
 
   return (
     <header
-      className={
-        solid
-          ? "sticky top-0 z-20 border-b border-border bg-bg/95 backdrop-blur-md"
-          : "absolute inset-x-0 top-0 z-20"
-      }
+      className={cn(
+        "sticky top-0 z-30 border-b border-border/80 backdrop-blur-md",
+        solid ? "bg-bg/95" : "bg-bg/80",
+      )}
     >
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-2 font-medium tracking-tight text-fg">
-          <span className="inline-flex size-7 items-center justify-center rounded-full border border-border text-xs">
-            L
-          </span>
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
+        <Link to="/" className="flex items-center gap-2 text-fg">
+          <SiteMark className="size-6" />
           <span className="font-display text-lg tracking-tight">Lumen</span>
         </Link>
         <nav className="hidden items-center gap-1 sm:flex">
