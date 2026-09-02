@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { conceptsByModule, getField } from "@/lib/sciences";
+import type { Concept } from "@/lib/sciences-types";
+import { listPublishedTeacherLessons } from "@/lib/server/teacher-lessons";
 import { fetchFieldPapers } from "@/lib/server/papers";
 import type { LiteratureWork } from "@/lib/literature";
 import { authorsToString } from "@/lib/authors-display";
@@ -19,6 +21,7 @@ function FieldPage() {
   const { slug } = Route.useParams();
   const field = getField(slug);
   const [papers, setPapers] = useState<LiteratureWork[] | null>(null);
+  const [teacherConcepts, setTeacherConcepts] = useState<Concept[]>([]);
 
   useEffect(() => {
     if (!field) return;
@@ -29,6 +32,13 @@ function FieldPage() {
       })
       .catch(() => {
         if (!cancelled) setPapers([]);
+      });
+    listPublishedTeacherLessons({ data: { fieldSlug: field.slug } })
+      .then((rows) => {
+        if (!cancelled) setTeacherConcepts(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setTeacherConcepts([]);
       });
     return () => {
       cancelled = true;
@@ -49,7 +59,14 @@ function FieldPage() {
     );
   }
 
-  const modules = conceptsByModule(field);
+  const mergedField = {
+    ...field,
+    concepts: [
+      ...field.concepts,
+      ...teacherConcepts.filter((tc) => !field.concepts.some((c) => c.id === tc.id)),
+    ],
+  };
+  const modules = conceptsByModule(mergedField);
 
   return (
     <div className="flex min-h-dvh flex-col pb-16 sm:pb-0">
@@ -74,7 +91,13 @@ function FieldPage() {
 
         <section className="mt-14">
           <h2 className="font-display text-2xl tracking-tight">Lessons</h2>
-          <p className="mt-1 text-sm text-muted">Open a topic for the full continuous lesson.</p>
+          <p className="mt-1 text-sm text-muted">
+            Open a topic for the full lesson. Teachers can add new subtopics from{" "}
+            <Link to="/teach" className="text-primary hover:underline">
+              Teach
+            </Link>
+            .
+          </p>
           <div className="mt-6 space-y-10">
             {modules.map(({ module, concepts }) => (
               <div key={module}>
@@ -92,7 +115,7 @@ function FieldPage() {
                         <BookOpen className="size-4 shrink-0 text-muted" />
                       </div>
                       <p className="mt-2 line-clamp-2 text-sm text-muted">{c.summary}</p>
-                      <p className="mt-2 text-xs text-subtle">{c.minutes} min</p>
+                      <p className="mt-2 text-xs text-subtle">{c.minutes ?? 25} min</p>
                     </Link>
                   ))}
                 </div>
@@ -109,7 +132,8 @@ function FieldPage() {
                 <li key={p.title} className="rounded-lg border border-border bg-surface p-4">
                   <p className="font-medium">{p.title}</p>
                   <p className="mt-1 text-sm text-muted">
-                    {typeof p.authors === "string" ? p.authors : authorsToString(p.authors)} · {p.year}
+                    {typeof p.authors === "string" ? p.authors : authorsToString(p.authors)} ·{" "}
+                    {p.year}
                   </p>
                   <p className="mt-2 text-sm text-subtle">{p.significance}</p>
                 </li>
