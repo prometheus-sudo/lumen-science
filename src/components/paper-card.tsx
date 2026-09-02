@@ -1,8 +1,8 @@
-import { authorsToString, type LiteratureWork } from "@/lib/literature";
-import { authorsToString as authorsStr } from "@/lib/authors-display";
+import type { LiteratureWork } from "@/lib/literature";
+import { authorsToString } from "@/lib/authors-display";
 
 export function PaperCard({ work }: { work: LiteratureWork }) {
-  const authors = authorsStr(work.authors) || authorsToString?.(work.authors as never) || "";
+  const authors = authorsToString(work.authors);
   return (
     <article className="rounded-md border border-border/80 bg-bg/40 p-4">
       <div className="flex flex-wrap items-center gap-2 text-[11px] tracking-wide text-muted uppercase">
