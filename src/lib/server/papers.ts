@@ -2,11 +2,33 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "@/lib/db";
 import { getField, getConcept } from "@/lib/sciences";
 import { searchOpenLiterature, type LiteratureWork } from "@/lib/literature";
+import { authorsToString } from "@/lib/authors-display";
 
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 
 function cacheKey(kind: string, query: string, rows: number): string {
   return `${kind}:${query.trim().toLowerCase().slice(0, 180)}:${rows}`;
+}
+
+function normalizeWork(raw: unknown): LiteratureWork | null {
+  if (!raw || typeof raw !== "object") return null;
+  const w = raw as Record<string, unknown>;
+  const title = typeof w.title === "string" ? w.title : "";
+  if (!title) return null;
+  return {
+    id: String(w.id ?? title.slice(0, 80)),
+    title,
+    year: typeof w.year === "number" ? w.year : null,
+    citedBy: typeof w.citedBy === "number" ? w.citedBy : Number(w.citedBy) || 0,
+    doi: typeof w.doi === "string" ? w.doi : null,
+    url: typeof w.url === "string" ? w.url : null,
+    pdfUrl: typeof w.pdfUrl === "string" ? w.pdfUrl : null,
+    authors: authorsToString(w.authors),
+    abstract: typeof w.abstract === "string" ? w.abstract : "",
+    venue: typeof w.venue === "string" ? w.venue : "",
+    source: (w.source as LiteratureWork["source"]) || "Crossref (CC)",
+    license: typeof w.license === "string" ? w.license : null,
+  };
 }
 
 function asWorks(raw: unknown): LiteratureWork[] {
@@ -17,7 +39,8 @@ function asWorks(raw: unknown): LiteratureWork[] {
       return [];
     }
   }
-  return Array.isArray(raw) ? (raw as LiteratureWork[]) : [];
+  if (!Array.isArray(raw)) return [];
+  return raw.map(normalizeWork).filter((w): w is LiteratureWork => w != null);
 }
 
 export async function loadOpenPapers(query: string, rows = 8): Promise<LiteratureWork[]> {
@@ -36,7 +59,7 @@ export async function loadOpenPapers(query: string, rows = 8): Promise<Literatur
     /* cache optional */
   }
 
-  const works = await searchOpenLiterature(query, rows);
+  const works = asWorks(await searchOpenLiterature(query, rows));
 
   try {
     const sql = await getSql();
@@ -97,7 +120,7 @@ export function formatPapersForPrompt(works: LiteratureWork[], limit = 6): strin
     .slice(0, limit)
     .map((w, i) => {
       const cite = [
-        w.authors || "Unknown authors",
+        authorsToString(w.authors) || "Unknown authors",
         w.year ? `(${w.year})` : "",
         w.title,
         w.venue || "",

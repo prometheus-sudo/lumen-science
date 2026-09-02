@@ -1,13 +1,14 @@
-import type { LiteratureWork } from "@/lib/literature";
+import { authorsToString, type LiteratureWork } from "@/lib/literature";
+import { authorsToString as authorsStr } from "@/lib/authors-display";
 
 export function PaperCard({ work }: { work: LiteratureWork }) {
+  const authors = authorsStr(work.authors) || authorsToString?.(work.authors as never) || "";
   return (
     <article className="rounded-md border border-border/80 bg-bg/40 p-4">
       <div className="flex flex-wrap items-center gap-2 text-[11px] tracking-wide text-muted uppercase">
         <span>{work.source}</span>
         {work.year ? <span>· {work.year}</span> : null}
         {work.license ? <span>· {work.license}</span> : null}
-        <span className="rounded-sm bg-primary/15 px-1.5 py-0.5 text-primary">Open access</span>
       </div>
       <h3 className="mt-2 text-base font-medium leading-snug text-fg">
         {work.url ? (
@@ -18,7 +19,7 @@ export function PaperCard({ work }: { work: LiteratureWork }) {
           work.title
         )}
       </h3>
-      {work.authors ? <p className="mt-1 text-sm text-muted">{work.authors}</p> : null}
+      {authors ? <p className="mt-1 text-sm text-muted">{authors}</p> : null}
       {work.venue ? <p className="mt-0.5 text-xs text-muted">{work.venue}</p> : null}
       {work.abstract ? (
         <p className="mt-2 line-clamp-3 text-sm text-muted">{work.abstract}</p>
