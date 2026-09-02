@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #f4f1ea;
+  --color-surface: #fffcf6;
+  --color-fg: #1c1b18;
+  --color-muted: #6b6962;
+  --color-subtle: #8a877e;
+  --color-primary: #243d36;
+  --color-primary-fg: #f4f1ea;
+  --color-border: #ddd6c8;
+  --color-ring: #243d36;
+  --color-danger: #8f2d2d;
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Serif", ui-serif, Georgia, "Times New Roman", serif;
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  body {
+    min-height: 100dvh;
+    font-family: var(--font-sans);
+    background-color: transparent;
+    color: var(--color-fg);
+  }
+
+  .lumen-fixed-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-color: var(--color-bg);
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--color-fg) 5%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--color-fg) 5%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px;
+    background-position: -1px -1px;
+  }
+
+  .lumen-app-shell {
+    position: relative;
+    z-index: 1;
+    min-height: 100dvh;
+  }
+
+  html.night {
+    --color-bg: #12141a;
+    --color-surface: #1a1d26;
+    --color-fg: #e8e6e0;
+    --color-muted: #a09c94;
+    --color-subtle: #7a7670;
+    --color-primary: #7eb8a8;
+    --color-primary-fg: #0f1412;
+    --color-border: #2e3340;
+    --color-ring: #7eb8a8;
+    --color-danger: #e07070;
+    color-scheme: dark;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
