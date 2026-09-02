@@ -14,6 +14,7 @@ import neuroscience from "./curriculum/neuroscience";
 import ecology from "./curriculum/ecology";
 import materials from "./curriculum/materials";
 import psychology from "./curriculum/psychology";
+import quantum from "./curriculum/quantum";
 
 export const FIELDS: ScienceField[] = [
   physics,
@@ -28,6 +29,7 @@ export const FIELDS: ScienceField[] = [
   ecology,
   materials,
   psychology,
+  quantum,
 ];
 
 export function getField(slug: string): ScienceField | undefined {
@@ -43,9 +45,7 @@ export function getConcept(slug: string, conceptId: string) {
 }
 
 export function allConcepts() {
-  return FIELDS.flatMap((f) =>
-    f.concepts.map((c) => ({ field: f, concept: c })),
-  );
+  return FIELDS.flatMap((f) => f.concepts.map((c) => ({ field: f, concept: c })));
 }
 
 export function conceptsByModule(field: ScienceField) {

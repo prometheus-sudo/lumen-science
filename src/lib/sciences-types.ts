@@ -11,6 +11,7 @@ export const FIELD_SLUGS = [
   "ecology",
   "materials",
   "psychology",
+  "quantum",
 ] as const;
 
 export type FieldSlug = (typeof FIELD_SLUGS)[number];
