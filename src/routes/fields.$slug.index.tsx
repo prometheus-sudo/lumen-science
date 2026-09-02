@@ -9,8 +9,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { conceptsByModule, getField } from "@/lib/sciences";
 import { fetchFieldPapers } from "@/lib/server/papers";
 import type { LiteratureWork } from "@/lib/literature";
+import { authorsToString } from "@/lib/authors-display";
 
-export const Route = createFileRoute("/fields/$slug/")({ component: FieldPage });
+export const Route = createFileRoute("/fields/$slug/")({
+  component: FieldPage,
+});
 
 function FieldPage() {
   const { slug } = Route.useParams();
@@ -70,108 +73,89 @@ function FieldPage() {
         </div>
 
         <section className="mt-14">
-          <h2 className="font-display text-2xl tracking-tight">Curriculum</h2>
-          <p className="mt-1 text-sm text-muted">
-            {field.concepts.length} lessons
-            {modules.length > 0 ? ` in ${modules.length} modules` : ""}. Sign in to rewrite any
-            lesson for your level and region.
-          </p>
-          {modules.length > 0 ? (
-            <div className="mt-8 space-y-12">
-              {modules.map(({ module, concepts }) => (
-                <div key={module}>
-                  <h3 className="font-display text-xl tracking-tight">{module}</h3>
-                  <p className="mt-1 text-xs text-subtle">{concepts.length} lessons</p>
-                  <div className="mt-4 grid gap-3 md:grid-cols-2">
-                    {concepts.map((c) => (
-                      <Link
-                        key={c.id}
-                        to="/fields/$slug/learn/$conceptId"
-                        params={{ slug: field.slug, conceptId: c.id }}
-                        className="rounded-lg border border-border bg-surface p-5 transition-colors duration-150 hover:border-primary/30"
-                      >
-                        <div className="flex items-center gap-2 text-xs font-medium text-muted">
-                          <BookOpen className="size-3.5" />
-                          Lesson
-                          {c.minutes ? <span className="text-subtle">· ~{c.minutes} min</span> : null}
-                        </div>
-                        <h4 className="mt-2 font-display text-lg">{c.title}</h4>
-                        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted">
-                          {c.whyItMatters}
-                        </p>
-                      </Link>
-                    ))}
-                  </div>
+          <h2 className="font-display text-2xl tracking-tight">Lessons</h2>
+          <p className="mt-1 text-sm text-muted">Open a topic for the full continuous lesson.</p>
+          <div className="mt-6 space-y-10">
+            {modules.map(({ module, concepts }) => (
+              <div key={module}>
+                <h3 className="text-xs font-medium tracking-[0.16em] text-muted uppercase">{module}</h3>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {concepts.map((c) => (
+                    <Link
+                      key={c.id}
+                      to="/lesson/$slug/$conceptId"
+                      params={{ slug: field.slug, conceptId: c.id }}
+                      className="group rounded-lg border border-border bg-surface p-4 transition-colors hover:border-fg/30"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-medium leading-snug group-hover:underline">{c.title}</span>
+                        <BookOpen className="size-4 shrink-0 text-muted" />
+                      </div>
+                      <p className="mt-2 line-clamp-2 text-sm text-muted">{c.summary}</p>
+                      <p className="mt-2 text-xs text-subtle">{c.minutes} min</p>
+                    </Link>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              {field.concepts.map((c) => (
-                <Link
-                  key={c.id}
-                  to="/fields/$slug/learn/$conceptId"
-                  params={{ slug: field.slug, conceptId: c.id }}
-                  className="rounded-lg border border-border bg-surface p-5 transition-colors duration-150 hover:border-primary/30"
-                >
-                  <div className="flex items-center gap-2 text-xs font-medium text-muted">
-                    <BookOpen className="size-3.5" />
-                    Lesson
-                  </div>
-                  <h3 className="mt-2 font-display text-xl">{c.title}</h3>
-                  <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-muted">{c.summary}</p>
-                </Link>
-              ))}
-            </div>
-          )}
+              </div>
+            ))}
+          </div>
         </section>
+
+        {field.landmarks?.length ? (
+          <section className="mt-14">
+            <h2 className="font-display text-2xl tracking-tight">Landmark ideas</h2>
+            <ul className="mt-5 space-y-4">
+              {field.landmarks.map((p) => (
+                <li key={p.title} className="rounded-lg border border-border bg-surface p-4">
+                  <p className="font-medium">{p.title}</p>
+                  <p className="mt-1 text-sm text-muted">
+                    {typeof p.authors === "string" ? p.authors : authorsToString(p.authors)} · {p.year}
+                  </p>
+                  <p className="mt-2 text-sm text-subtle">{p.significance}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <section className="mt-14">
-          <h2 className="font-display text-2xl tracking-tight">Landmark work</h2>
-          <p className="mt-1 text-sm text-muted">
-            Canonical papers and books that still structure the field.
-          </p>
-          <ul className="mt-5 space-y-3">
-            {field.landmarks.map((p) => (
-              <li key={p.title} className="rounded-lg border border-border bg-surface p-4">
-                <div className="font-medium">{p.title}</div>
-                <div className="mt-1 text-sm text-muted">
-                  {p.authors} · {p.year}
-                </div>
-                <p className="mt-2 text-sm text-muted">{p.significance}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="mt-14 mb-8">
-          <h2 className="font-display text-2xl tracking-tight">Open literature</h2>
-          <p className="mt-1 text-sm text-muted">Recent open-access papers related to this field.</p>
-          <div className="mt-5 grid gap-3">
-            {papers === null ? (
-              <Skeleton className="h-24 w-full" />
-            ) : papers.length === 0 ? (
-              <p className="text-sm text-muted">No papers loaded right now.</p>
-            ) : (
-              papers.slice(0, 8).map((w) => (
-                <Card key={w.id}>
-                  <CardContent className="p-4">
-                    <a
-                      href={w.url || w.doi || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium hover:underline"
-                    >
-                      {w.title} <ArrowUpRight className="inline size-3.5" />
-                    </a>
-                    <p className="mt-1 text-xs text-muted">
-                      {(w.authors || []).slice(0, 3).join(", ")}
-                      {w.year ? ` · ${w.year}` : ""}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))
+          <h2 className="font-display text-2xl tracking-tight">From the literature</h2>
+          <p className="mt-1 text-sm text-muted">Open-access records for this field.</p>
+          <div className="mt-5 space-y-3">
+            {papers === null && (
+              <>
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+              </>
             )}
+            {papers && papers.length === 0 && (
+              <Card>
+                <CardContent className="text-sm text-muted">
+                  Live literature could not be loaded just now.
+                </CardContent>
+              </Card>
+            )}
+            {papers?.slice(0, 8).map((w) => (
+              <article key={w.id} className="rounded-lg border border-border bg-surface p-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  {w.venue ? <Badge>{w.venue}</Badge> : null}
+                  {w.year ? <span className="text-xs tabular-nums text-subtle">{w.year}</span> : null}
+                </div>
+                <h3 className="mt-2 font-medium leading-snug">{w.title}</h3>
+                <p className="mt-1 text-sm text-muted">{authorsToString(w.authors)}</p>
+                {w.url ? (
+                  <a
+                    href={w.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex items-center gap-1 text-sm text-muted hover:text-fg"
+                  >
+                    Open record
+                    <ArrowUpRight className="size-3.5" />
+                  </a>
+                ) : null}
+              </article>
+            ))}
           </div>
         </section>
       </main>
