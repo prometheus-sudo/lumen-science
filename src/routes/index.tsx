@@ -12,8 +12,11 @@ function Home() {
     <div className="flex min-h-dvh flex-col bg-bg">
       <SiteHeader solid />
       <main className="flex-1 pb-16">
-        <section className="mx-auto max-w-6xl px-4 pt-14 sm:px-6 sm:pt-16">
-          <h1 className="max-w-2xl text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
+        <section className="mx-auto max-w-6xl px-4 pt-12 sm:px-6 sm:pt-16">
+          <p className="font-display text-6xl leading-none tracking-tight text-fg sm:text-7xl md:text-8xl">
+            Lumen
+          </p>
+          <h1 className="mt-6 max-w-2xl text-2xl font-semibold tracking-tight text-fg sm:text-3xl md:text-4xl">
             Free science learning from open research
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-muted">
@@ -60,7 +63,7 @@ function Home() {
 
         <section className="mx-auto mt-16 max-w-6xl px-4 sm:px-6">
           <div className="mb-6 flex items-end justify-between gap-4">
-            <h2 className="text-2xl font-semibold tracking-tight">Sciences</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">{FIELDS.length} sciences</h2>
             <Link to="/explore" className="text-sm text-muted hover:text-fg">
               See all
             </Link>
