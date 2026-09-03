@@ -10,6 +10,21 @@ export type QuizQuestion = {
   explanation: string;
 };
 
+function shuffleWithAnswer(
+  choices: string[],
+  correctIndex: number,
+): { choices: string[]; answerIndex: number } {
+  const pairs = choices.map((c, i) => ({ c, correct: i === correctIndex }));
+  for (let i = pairs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+  }
+  return {
+    choices: pairs.map((p) => p.c),
+    answerIndex: pairs.findIndex((p) => p.correct),
+  };
+}
+
 export const generateTopicQuiz = createServerFn({ method: "GET" })
   .validator((input: { slug: string; conceptId: string }) => input)
   .handler(async ({ data }): Promise<{ title: string; questions: QuizQuestion[] }> => {
@@ -23,6 +38,7 @@ export const generateTopicQuiz = createServerFn({ method: "GET" })
       return { title: "Quiz", questions: [] };
     }
     const title = concept.title;
+    const fieldName = field.name;
     const ideas = concept.keyIdeas?.length
       ? concept.keyIdeas
       : [
@@ -30,33 +46,46 @@ export const generateTopicQuiz = createServerFn({ method: "GET" })
           `Main mechanism behind ${title}`,
           `Evidence used to support claims about ${title}`,
         ];
-    const questions: QuizQuestion[] = ideas.slice(0, 5).map((idea, i) => {
+
+    const questions: QuizQuestion[] = [];
+
+    {
+      const base = [
+        concept.whyItMatters?.slice(0, 140) || `Understanding ${title} within ${fieldName}`,
+        `Only memorising labels without mechanisms for ${title}`,
+        `Ignoring evidence and measurement related to ${title}`,
+        `Treating ${title} as unrelated to ${fieldName}`,
+      ];
+      const { choices, answerIndex } = shuffleWithAnswer(base, 0);
+      questions.push({
+        id: "q0",
+        prompt: `What is the main focus of the topic \u201c${title}\u201d?`,
+        choices,
+        answerIndex,
+        explanation: concept.whyItMatters || `This topic sits in ${fieldName}.`,
+      });
+    }
+
+    ideas.slice(0, 5).forEach((idea, i) => {
       const correct = idea.slice(0, 160);
-      const distractors = [
-        `A claim that confuses ${title} with an unrelated process.`,
-        `An overstated rule that ignores limits of ${title}.`,
+      const base = [
+        correct,
+        `A claim that confuses ${title} with an unrelated process in ${fieldName}.`,
+        `An overstated rule that ignores the limits of ${title}.`,
         `A description that reverses cause and effect for ${title}.`,
       ];
-      const ordered = [correct, distractors[0], distractors[1], distractors[2]];
-      return {
+      const { choices, answerIndex } = shuffleWithAnswer(base, 0);
+      questions.push({
         id: `q${i + 1}`,
         prompt: `Which statement best matches established science about ${title}?`,
-        choices: ordered,
-        answerIndex: 0,
-        explanation: `Focus on mechanisms and evidence for ${title} in ${field.name}. Key idea: ${idea}`,
-      };
+        choices,
+        answerIndex,
+        explanation: `Focus on mechanisms and evidence for ${title} in ${fieldName}. Key idea: ${idea}`,
+      });
     });
-    questions.unshift({
-      id: "q0",
-      prompt: `What is the main focus of the topic “${title}”?`,
-      choices: [
-        concept.whyItMatters?.slice(0, 140) || `Understanding ${title} in ${field.name}`,
-        `Only memorising labels without mechanisms`,
-        `Ignoring evidence and measurement`,
-        `Treating ${title} as unrelated to ${field.name}`,
-      ],
-      answerIndex: 0,
-      explanation: concept.whyItMatters || `This topic sits in ${field.name}.`,
-    });
-    return { title: `Quiz · ${title}`, questions: questions.slice(0, 6) };
+
+    return {
+      title: `Quiz \u00b7 ${title}`,
+      questions: questions.slice(0, 6),
+    };
   });

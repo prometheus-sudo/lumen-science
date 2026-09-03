@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { BookOpen, MessageSquare, Sparkles } from "lucide-react";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
   {
     to: "/oracle" as const,
     label: "Oracle",
-    hint: "Tutor · syllabi · Q&A",
+    hint: "Tutor \u00b7 syllabi \u00b7 Q&A",
     icon: Sparkles,
   },
   {
@@ -24,9 +25,13 @@ const ITEMS = [
   },
 ] as const;
 
+/** Right-side tools only when signed in. Guests use the top header. */
 export function SideTaskbar() {
+  const { user, isPending } = useCurrentUserState();
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  if (isPending || !user) return null;
 
   return (
     <aside

@@ -5,17 +5,21 @@ import { SiteMark } from "@/components/site-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
-const links = [
+const PUBLIC_LINKS = [
   { to: "/explore", label: "Sciences" },
   { to: "/library", label: "Library" },
-  { to: "/oracle", label: "Oracle" },
-  { to: "/syllabus", label: "Syllabus" },
   { to: "/teach", label: "Teach" },
+] as const;
+
+const ACCOUNT_TOOLS = [
+  { to: "/oracle", label: "Oracle" },
+  { to: "/syllabus", label: "Syllabi" },
   { to: "/messages", label: "Messages" },
 ] as const;
 
 export function SiteHeader({ solid = false }: { solid?: boolean }) {
   const { user, isPending } = useCurrentUserState();
+  const showToolsInHeader = !isPending && !user;
 
   return (
     <header
@@ -30,7 +34,7 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
           <span className="font-display text-2xl tracking-tight sm:text-3xl">Lumen</span>
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
-          {links.map((l) => (
+          {PUBLIC_LINKS.map((l) => (
             <Link
               key={l.to}
               to={l.to}
@@ -39,6 +43,17 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
               {l.label}
             </Link>
           ))}
+          {showToolsInHeader
+            ? ACCOUNT_TOOLS.map((l) => (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  className="rounded-sm px-3 py-2 text-sm text-muted transition-colors duration-150 hover:text-fg"
+                >
+                  {l.label}
+                </Link>
+              ))
+            : null}
         </nav>
         <div className="flex min-h-8 min-w-24 items-center justify-end gap-1">
           <ThemeToggle />
@@ -82,17 +97,33 @@ export function SiteFooter() {
 }
 
 export function MobileNav() {
+  const { user, isPending } = useCurrentUserState();
+  const items = [
+    { to: "/explore" as const, label: "Sciences" },
+    ...(isPending || user
+      ? []
+      : [
+          { to: "/oracle" as const, label: "Oracle" },
+          { to: "/syllabus" as const, label: "Syllabi" },
+        ]),
+    ...(user
+      ? [
+          { to: "/oracle" as const, label: "Oracle" },
+          { to: "/messages" as const, label: "Messages" },
+          { to: "/account" as const, label: "Account" },
+        ]
+      : [{ to: "/login" as const, label: "Sign in" }]),
+  ];
+
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden">
-      <div className="grid grid-cols-4">
-        {[
-          { to: "/explore" as const, label: "Sciences" },
-          { to: "/oracle" as const, label: "Oracle" },
-          { to: "/syllabus" as const, label: "Syllabus" },
-          { to: "/account" as const, label: "Account" },
-        ].map((l) => (
+      <div
+        className="grid"
+        style={{ gridTemplateColumns: `repeat(${Math.min(items.length, 5)}, minmax(0, 1fr))` }}
+      >
+        {items.map((l) => (
           <Link
-            key={l.to}
+            key={l.to + l.label}
             to={l.to}
             className="flex h-12 items-center justify-center text-xs font-medium text-muted hover:text-fg"
           >
