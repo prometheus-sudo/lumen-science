@@ -2,6 +2,7 @@ import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-r
 import { createServerFn } from "@tanstack/react-start";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth/provider";
+import { SideTaskbar } from "@/components/side-taskbar";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import appCss from "../styles.css?url";
 
@@ -58,6 +59,7 @@ function RootDocument() {
         <div className="lumen-app-shell">
           <AuthProvider>
             <Outlet />
+            <SideTaskbar />
           </AuthProvider>
         </div>
         <Toaster
