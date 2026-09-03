@@ -11,10 +11,29 @@ export type TeacherMessage = {
   to_user_id: string;
   body: string;
   created_at: string;
+  from_username?: string | null;
+  to_username?: string | null;
 };
 
 function threadKey(a: string, b: string) {
   return [a, b].sort().join(":");
+}
+
+async function usernameMap(sql: Awaited<ReturnType<typeof getSql>>, ids: string[]) {
+  const unique = [...new Set(ids.filter(Boolean))];
+  const map = new Map<string, string | null>();
+  if (!unique.length) return map;
+  try {
+    for (const id of unique) {
+      const rows = await sql<{ username: string | null }>`
+        select username from profiles where user_id = ${id} limit 1
+      `;
+      map.set(id, rows[0]?.username ? String(rows[0].username) : null);
+    }
+  } catch {
+    /* ignore */
+  }
+  return map;
 }
 
 export const listTeachers = createServerFn({ method: "GET" })
@@ -24,13 +43,14 @@ export const listTeachers = createServerFn({ method: "GET" })
     try {
       const rows = await sql<{ user_id: string; username: string | null }>`
         select user_id, username from profiles
-        where account_role = 'teacher'
-        order by username nulls last
+        where account_role = 'teacher' and username is not null and username <> ''
+        order by username
         limit 50
       `;
       return rows.map((r) => ({
         userId: r.user_id,
-        label: r.username ? `@${r.username}` : `Teacher ${r.user_id.slice(0, 8)}`,
+        username: String(r.username),
+        label: `@${r.username}`,
       }));
     } catch {
       return [];
@@ -48,7 +68,15 @@ export const listMyMessages = createServerFn({ method: "GET" })
         order by created_at desc
         limit 100
       `;
-      return rows;
+      const map = await usernameMap(
+        sql,
+        rows.flatMap((r) => [r.from_user_id, r.to_user_id]),
+      );
+      return rows.map((r) => ({
+        ...r,
+        from_username: map.get(r.from_user_id) ?? null,
+        to_username: map.get(r.to_user_id) ?? null,
+      }));
     } catch {
       return [];
     }
@@ -56,25 +84,48 @@ export const listMyMessages = createServerFn({ method: "GET" })
 
 export const sendTeacherMessage = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((input: { toUserId: string; body: string; fieldSlug?: string; conceptId?: string }) => {
-    const body = (input.body || "").trim();
-    if (body.length < 2) throw new Error("Message too short");
-    if (body.length > 4000) throw new Error("Message too long");
-    if (!input.toUserId) throw new Error("Choose a teacher");
-    return {
-      toUserId: input.toUserId,
-      body,
-      fieldSlug: input.fieldSlug || null,
-      conceptId: input.conceptId || null,
-    };
-  })
+  .validator(
+    (input: {
+      toUsername?: string;
+      toUserId?: string;
+      body: string;
+      fieldSlug?: string;
+      conceptId?: string;
+    }) => {
+      const body = (input.body || "").trim();
+      if (body.length < 2) throw new Error("Message too short");
+      if (body.length > 4000) throw new Error("Message too long");
+      const toUsername = (input.toUsername || "").trim().toLowerCase().replace(/^@/, "");
+      const toUserId = (input.toUserId || "").trim();
+      if (!toUsername && !toUserId) throw new Error("Choose a teacher by @username");
+      return {
+        toUsername: toUsername || null,
+        toUserId: toUserId || null,
+        body,
+        fieldSlug: input.fieldSlug || null,
+        conceptId: input.conceptId || null,
+      };
+    },
+  )
   .handler(async ({ context, data }) => {
-    if (data.toUserId === context.userId) throw new Error("Cannot message yourself");
     const sql = await getSql();
-    const tid = threadKey(context.userId, data.toUserId);
+    let toUserId = data.toUserId;
+    if (data.toUsername) {
+      const rows = await sql<{ user_id: string; account_role: string | null }>`
+        select user_id, account_role from profiles
+        where lower(username) = ${data.toUsername}
+        limit 1
+      `;
+      if (!rows[0]) throw new Error("No teacher with that username");
+      if (rows[0].account_role !== "teacher") throw new Error("That user is not a teacher");
+      toUserId = rows[0].user_id;
+    }
+    if (!toUserId) throw new Error("Choose a teacher by @username");
+    if (toUserId === context.userId) throw new Error("Cannot message yourself");
+    const tid = threadKey(context.userId, toUserId);
     await sql`
       insert into teacher_messages (thread_id, field_slug, concept_id, from_user_id, to_user_id, body)
-      values (${tid}, ${data.fieldSlug}, ${data.conceptId}, ${context.userId}, ${data.toUserId}, ${data.body})
+      values (${tid}, ${data.fieldSlug}, ${data.conceptId}, ${context.userId}, ${toUserId}, ${data.body})
     `;
     return { ok: true };
   });
