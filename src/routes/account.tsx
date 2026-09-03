@@ -9,7 +9,9 @@ import { Select } from "@/components/ui/select";
 import { UserButton } from "@/lib/auth/gates";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { LANGUAGES, LEARNING_LEVELS, REGIONS } from "@/lib/learner";
-import { getProfile, saveProfile, setUsername } from "@/lib/server/profile";
+import { getProfile, saveProfile, setUsername, setAvatar } from "@/lib/server/profile";
+import { AVATAR_PRESETS } from "@/lib/avatars";
+import { AvatarDisplay } from "@/components/avatar-display";
 
 export const Route = createFileRoute("/account")({ component: Account });
 
@@ -29,6 +31,8 @@ function AccountForm() {
   const [busy, setBusy] = useState(false);
   const [username, setUsernameField] = useState("");
   const [usernameBusy, setUsernameBusy] = useState(false);
+  const [avatarKey, setAvatarKeyState] = useState<string | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
 
   useEffect(() => {
     getProfile()
@@ -37,6 +41,12 @@ function AccountForm() {
         setRegion(p.region);
         setLanguage(p.languagePref);
         setUsernameField(p.username ?? "");
+        setAvatarKeyState(p.avatarKey ?? null);
+        try {
+          if (p.avatarKey) localStorage.setItem("lumen-avatar-key", p.avatarKey);
+        } catch {
+          /* ignore */
+        }
       })
       .catch(() => undefined);
   }, []);
@@ -69,6 +79,62 @@ function AccountForm() {
         </div>
 
         <div className="mt-10 space-y-3 rounded-lg border border-border bg-surface p-4">
+          <h2 className="text-sm font-semibold">Profile picture</h2>
+          <p className="text-xs text-muted">
+            Choose a preset. It appears in the header when you are signed in.
+          </p>
+          <div className="flex items-center gap-3">
+            <AvatarDisplay
+              avatarKey={avatarKey}
+              imageUrl={user?.profileImageUrl}
+              label={user?.displayName ?? user?.primaryEmail ?? "U"}
+              size={48}
+            />
+            <span className="text-xs text-muted">Current</span>
+          </div>
+          <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
+            {AVATAR_PRESETS.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                disabled={avatarBusy}
+                title={a.label}
+                onClick={() => {
+                  setAvatarBusy(true);
+                  setAvatar({ data: { avatarKey: a.id } })
+                    .then((p) => {
+                      setAvatarKeyState(p.avatarKey);
+                      try {
+                        if (p.avatarKey) localStorage.setItem("lumen-avatar-key", p.avatarKey);
+                      } catch {
+                        /* ignore */
+                      }
+                      toast("Picture saved");
+                    })
+                    .catch((err) =>
+                      toast(err instanceof Error ? err.message : "Could not save picture"),
+                    )
+                    .finally(() => setAvatarBusy(false));
+                }}
+                className={`grid place-items-center rounded-full ring-offset-2 transition ${
+                  avatarKey === a.id ? "ring-2 ring-primary" : "hover:opacity-90"
+                }`}
+                style={{
+                  width: 40,
+                  height: 40,
+                  background: a.bg,
+                  color: a.fg,
+                  fontSize: 14,
+                  fontWeight: 600,
+                }}
+              >
+                {a.glyph}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-10 space-y-3 rounded-lg border border-border bg-surface p-4">
           <h2 className="text-sm font-semibold">Username</h2>
           <p className="text-xs text-muted">
             Public handle for messages. Must be unique (letters, numbers, underscore).
@@ -93,7 +159,7 @@ function AccountForm() {
                   .finally(() => setUsernameBusy(false));
               }}
             >
-              {usernameBusy ? "…" : "Save"}
+              {usernameBusy ? "\u2026" : "Save"}
             </Button>
           </div>
         </div>
@@ -104,7 +170,7 @@ function AccountForm() {
             <Select id="level" value={level} onChange={(e) => setLevel(e.target.value)}>
               {LEARNING_LEVELS.map((l) => (
                 <option key={l.id} value={l.id}>
-                  {l.label} — {l.ages}
+                  {l.label} \u2014 {l.ages}
                 </option>
               ))}
             </Select>
@@ -120,7 +186,7 @@ function AccountForm() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="language">Language preference</Label>
+            <Label htmlFor="language">Language</Label>
             <Select id="language" value={language} onChange={(e) => setLanguage(e.target.value)}>
               {LANGUAGES.map((l) => (
                 <option key={l.id} value={l.id}>
@@ -130,7 +196,7 @@ function AccountForm() {
             </Select>
           </div>
           <Button type="submit" disabled={busy}>
-            {busy ? "Saving…" : "Save preferences"}
+            {busy ? "Saving\u2026" : "Save preferences"}
           </Button>
         </form>
       </main>
