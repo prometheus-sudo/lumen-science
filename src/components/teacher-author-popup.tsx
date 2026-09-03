@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { sendTeacherMessage } from "@/lib/server/messages";
-import type { TeacherPublicCard } from "@/lib/server/teacher-lessons";
+import type { TeacherPublicCard } from "@/lib/server/teacher-public";
 
 export function TeacherAuthorByline({
   author,
