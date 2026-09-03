@@ -18,83 +18,131 @@ export function youtubeEmbedUrl(id: string) {
 }
 
 export const TOPIC_VIDEOS: Record<string, TopicVideo[]> = {
-  "physics/newton-laws": [
+  "physics/phys-mech": [
     { title: "Most People Don't Know How Bikes Work", channel: "Veritasium", youtubeId: "9cNmUNHSBac", note: "Forces and everyday mechanics." },
-    { title: "Newton's Laws of Motion", channel: "The Organic Chemistry Tutor", youtubeId: "g550H4e5FCY", note: "Worked introduction to the three laws." },
   ],
-  "physics/energy-momentum": [
-    { title: "Newton's Laws of Motion", channel: "The Organic Chemistry Tutor", youtubeId: "g550H4e5FCY", note: "Foundation for energy and force problems." },
-    { title: "Understanding Bernoulli's Equation", channel: "The Efficient Engineer", youtubeId: "DW4rItB20h4", note: "Energy conservation in fluids." },
+  "physics/phys-motion": [
+    { title: "Newton's Laws of Motion", channel: "The Organic Chemistry Tutor", youtubeId: "g550H4e5FCY", note: "Kinematics and Newton's laws." },
   ],
-  "physics/fields": [
-    { title: "The Biggest Misconception About Electricity", channel: "Veritasium", youtubeId: "bHIhgxav9LY", note: "Fields carry energy in circuits." },
-    { title: "How Electricity Actually Works", channel: "Veritasium", youtubeId: "oI_X2cMHNe0", note: "Follow-up field picture of electrical energy." },
+  "physics/phys-force": [
+    { title: "Newton's Laws of Motion", channel: "The Organic Chemistry Tutor", youtubeId: "g550H4e5FCY", note: "Force and acceleration." },
+    { title: "Most People Don't Know How Bikes Work", channel: "Veritasium", youtubeId: "9cNmUNHSBac", note: "Forces in everyday systems." },
   ],
-  "physics/circuits": [
-    { title: "The Biggest Misconception About Electricity", channel: "Veritasium", youtubeId: "bHIhgxav9LY", note: "How energy moves in circuits." },
+  "physics/phys-energy": [
+    { title: "Understanding Bernoulli's Equation", channel: "The Efficient Engineer", youtubeId: "DW4rItB20h4", note: "Energy in fluids." },
   ],
-  "physics/thermo": [
+  "physics/phys-mom": [
+    { title: "Newton's Laws of Motion", channel: "The Organic Chemistry Tutor", youtubeId: "g550H4e5FCY", note: "Momentum foundations." },
+  ],
+  "physics/phys-heat": [
     { title: "The Most Misunderstood Concept in Physics", channel: "Veritasium", youtubeId: "DxL2HoqLbyA", note: "Entropy and the arrow of time." },
   ],
-  "physics/quantum": [
-    { title: "Why Parallel Universes Are Probably Real", channel: "Veritasium", youtubeId: "kTXTPe3wahc", note: "Measurement and many-worlds ideas." },
+  "physics/phys-temp": [
+    { title: "The Most Misunderstood Concept in Physics", channel: "Veritasium", youtubeId: "DxL2HoqLbyA", note: "Temperature and thermodynamics." },
   ],
-  "physics/relativity": [
-    { title: "Something Strange Happens When You Follow Einstein's Math", channel: "Veritasium", youtubeId: "6akmv1bsz1M", note: "Relativity toward black holes." },
+  "physics/phys-ent": [
+    { title: "The Most Misunderstood Concept in Physics", channel: "Veritasium", youtubeId: "DxL2HoqLbyA", note: "Entropy." },
   ],
-  "physics/waves": [
-    { title: "The Surprising Secret of Synchronization", channel: "Veritasium", youtubeId: "t-_VPRCtiUg", note: "Coupled oscillators." },
+  "physics/phys-elec": [
+    { title: "The Biggest Misconception About Electricity", channel: "Veritasium", youtubeId: "bHIhgxav9LY", note: "How energy moves in circuits." },
+    { title: "How Electricity Actually Works", channel: "Veritasium", youtubeId: "oI_X2cMHNe0", note: "Fields and electrical energy." },
   ],
-  "chemistry/bonding": [
-    { title: "VSEPR Theory — Basic Introduction", channel: "The Organic Chemistry Tutor", youtubeId: "DBrq31w8vC4", note: "Molecular shape from electron pairs." },
-    { title: "Hybridization of Atomic Orbitals (sp, sp2, sp3)", channel: "The Organic Chemistry Tutor", youtubeId: "pdJeQUd2g_4", note: "Sigma and pi bonds." },
+  "physics/phys-circ": [
+    { title: "The Biggest Misconception About Electricity", channel: "Veritasium", youtubeId: "bHIhgxav9LY", note: "Circuit energy flow." },
   ],
-  "chemistry/organic": [
-    { title: "Organic Chemistry — Basic Introduction", channel: "The Organic Chemistry Tutor", youtubeId: "B_ketdzJtY8", note: "Functional groups and carbon frameworks." },
+  "physics/phys-mag": [
+    { title: "How Electricity Actually Works", channel: "Veritasium", youtubeId: "oI_X2cMHNe0", note: "Fields related to magnetism." },
   ],
-  "chemistry/organic-reactions": [
-    { title: "Organic Chemistry — Basic Introduction", channel: "The Organic Chemistry Tutor", youtubeId: "B_ketdzJtY8", note: "Framework for reaction patterns." },
+  "physics/phys-rel": [
+    { title: "Something Strange Happens When You Follow Einstein's Math", channel: "Veritasium", youtubeId: "6akmv1bsz1M", note: "Relativity." },
   ],
-  "chemistry/energetics": [
-    { title: "Why It Was Almost Impossible to Make the Blue LED", channel: "Veritasium", youtubeId: "AF8d72mA41M", note: "Band gaps and energetics of light." },
+  "physics/phys-qm": [
+    { title: "Why Parallel Universes Are Probably Real", channel: "Veritasium", youtubeId: "kTXTPe3wahc", note: "Quantum measurement ideas." },
   ],
-  "biology/evolution": [
-    { title: "The Longest-Running Evolution Experiment", channel: "Veritasium", youtubeId: "w4sLAQvEH-M", note: "Lenski E. coli experiment." },
+  "physics/phys-fluid": [
+    { title: "Understanding Bernoulli's Equation", channel: "The Efficient Engineer", youtubeId: "DW4rItB20h4", note: "Fluid energy." },
   ],
-  "astronomy/cosmo": [
-    { title: "Something Strange Happens When You Follow Einstein's Math", channel: "Veritasium", youtubeId: "6akmv1bsz1M", note: "Gravity and extreme objects." },
+  "chemistry/chem-bond": [
+    { title: "VSEPR Theory \u2014 Basic Introduction", channel: "The Organic Chemistry Tutor", youtubeId: "DBrq31w8vC4", note: "Molecular shape." },
+    { title: "Hybridization of Atomic Orbitals (sp, sp2, sp3)", channel: "The Organic Chemistry Tutor", youtubeId: "pdJeQUd2g_4", note: "Bonding orbitals." },
   ],
-  "astronomy/stars": [
-    { title: "First Image of a Black Hole!", channel: "Veritasium", youtubeId: "S_GVbuddri8", note: "Event Horizon Telescope." },
+  "chemistry/chem-carbon": [
+    { title: "Organic Chemistry - Basic Introduction", channel: "The Organic Chemistry Tutor", youtubeId: "bSMx0NS0XfY", note: "Carbon chemistry." },
   ],
-  "mathematics/proof": [
-    { title: "Math's Fundamental Flaw", channel: "Veritasium", youtubeId: "HeQX2HjkcNo", note: "Gödel and limits of proof." },
+  "chemistry/chem-stoich": [
+    { title: "Stoichiometry Basic Introduction", channel: "The Organic Chemistry Tutor", youtubeId: "6o7X2kFq0e4", note: "Mole ratios." },
   ],
-  "mathematics/calculus": [
-    { title: "Calculus 1 Review — Basic Introduction", channel: "The Organic Chemistry Tutor", youtubeId: "GiCojsAWRj0", note: "Limits and derivatives." },
+  "chemistry/chem-fg": [
+    { title: "Organic Chemistry - Basic Introduction", channel: "The Organic Chemistry Tutor", youtubeId: "bSMx0NS0XfY", note: "Functional groups context." },
   ],
-  "materials/crystal": [
-    { title: "Understanding Metals", channel: "The Efficient Engineer", youtubeId: "PaGJwOPg2kU", note: "Crystal structure and defects." },
+  "chemistry/chem-hc": [
+    { title: "Organic Chemistry - Basic Introduction", channel: "The Organic Chemistry Tutor", youtubeId: "bSMx0NS0XfY", note: "Hydrocarbons." },
+  ],
+  "quantum/quan-intro": [
+    { title: "Why Parallel Universes Are Probably Real", channel: "Veritasium", youtubeId: "kTXTPe3wahc", note: "Quantum ideas." },
+  ],
+  "quantum/quan-wave": [
+    { title: "Wave-Particle Duality Explained", channel: "The Organic Chemistry Tutor", youtubeId: "Swx4I_j6e-g", note: "Dual nature." },
+  ],
+  "quantum/quan-photo": [
+    { title: "The Photoelectric Effect", channel: "The Organic Chemistry Tutor", youtubeId: "kzL-ZjG1A2s", note: "Photons and electrons." },
+  ],
+  "quantum/quan-uncert": [
+    { title: "Heisenberg's Uncertainty Principle", channel: "Veritasium", youtubeId: "a8FvgUvQ0bY", note: "Uncertainty." },
+  ],
+  "quantum/quan-entangle": [
+    { title: "Quantum Entanglement & Spooky Action", channel: "Veritasium", youtubeId: "ZuvK-oq9K0s", note: "Entanglement." },
+  ],
+  "materials/mat-strength": [
+    { title: "Understanding Material Strength, Ductility and Toughness", channel: "The Efficient Engineer", youtubeId: "WSRqJdT2COE", note: "Structure\u2013property." },
+  ],
+  "materials/mat-stress": [
     { title: "An Introduction to Stress and Strain", channel: "The Efficient Engineer", youtubeId: "aQf6Q8t1FQE", note: "Load and deformation." },
   ],
-  "materials/phase": [
-    { title: "Understanding Material Strength, Ductility and Toughness", channel: "The Efficient Engineer", youtubeId: "WSRqJdT2COE", note: "Structure–property links." },
-    { title: "Understanding Young's Modulus", channel: "The Efficient Engineer", youtubeId: "DLE-ieOVFjI", note: "Stiffness." },
+  "ecology/eco-food": [
+    { title: "World's Largest Population Pyramid", channel: "Veritasium", youtubeId: "RLmKfXwWQtE", note: "Population and systems." },
   ],
-  "materials/semi": [
-    { title: "Why It Was Almost Impossible to Make the Blue LED", channel: "Veritasium", youtubeId: "AF8d72mA41M", note: "Semiconductors and band gaps." },
+  "psychology/psy-bias": [
+    { title: "The Most Common Cognitive Bias", channel: "Veritasium", youtubeId: "vKA4w2O61Xo", note: "Cognitive bias." },
   ],
-  "materials/mechanics-mat": [
-    { title: "An Introduction to Stress and Strain", channel: "The Efficient Engineer", youtubeId: "aQf6Q8t1FQE", note: "Core mechanical quantities." },
+};
+
+export const FIELD_VIDEOS: Record<string, TopicVideo[]> = {
+  physics: [
+    { title: "Newton's Laws of Motion", channel: "The Organic Chemistry Tutor", youtubeId: "g550H4e5FCY", note: "Core classical mechanics." },
+    { title: "The Biggest Misconception About Electricity", channel: "Veritasium", youtubeId: "bHIhgxav9LY", note: "Electric energy." },
   ],
-  "materials/metals": [
-    { title: "Understanding Metals", channel: "The Efficient Engineer", youtubeId: "PaGJwOPg2kU", note: "Alloys and microstructure." },
+  chemistry: [
+    { title: "Organic Chemistry - Basic Introduction", channel: "The Organic Chemistry Tutor", youtubeId: "bSMx0NS0XfY", note: "Carbon chemistry overview." },
   ],
-  "psychology/cognition": [
-    { title: "The Most Common Cognitive Bias", channel: "Veritasium", youtubeId: "vKA4w2O61Xo", note: "Selection and survivorship biases." },
+  quantum: [
+    { title: "Why Parallel Universes Are Probably Real", channel: "Veritasium", youtubeId: "kTXTPe3wahc", note: "Quantum overview." },
+  ],
+  materials: [
+    { title: "An Introduction to Stress and Strain", channel: "The Efficient Engineer", youtubeId: "aQf6Q8t1FQE", note: "Materials basics." },
+  ],
+  ecology: [
+    { title: "World's Largest Population Pyramid", channel: "Veritasium", youtubeId: "RLmKfXwWQtE", note: "Systems thinking." },
   ],
 };
 
 export function videosForConcept(fieldSlug: string, conceptId: string): TopicVideo[] {
-  return TOPIC_VIDEOS[`${fieldSlug}/${conceptId}`] ?? [];
+  const key = `${fieldSlug}/${conceptId}`;
+  const exact = TOPIC_VIDEOS[key];
+  if (exact?.length) return exact;
+  const hits: TopicVideo[] = [];
+  for (const [k, vids] of Object.entries(TOPIC_VIDEOS)) {
+    if (!k.startsWith(fieldSlug + "/")) continue;
+    const cid = k.slice(fieldSlug.length + 1);
+    if (conceptId.includes(cid) || cid.includes(conceptId)) hits.push(...vids);
+  }
+  if (hits.length) {
+    const seen = new Set<string>();
+    return hits.filter((v) => {
+      if (seen.has(v.youtubeId)) return false;
+      seen.add(v.youtubeId);
+      return true;
+    });
+  }
+  return FIELD_VIDEOS[fieldSlug] ?? [];
 }
