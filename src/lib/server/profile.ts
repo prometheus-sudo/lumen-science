@@ -24,6 +24,7 @@ export type Profile = {
   teacherInstitution: string;
   teacherQualification: string;
   username: string | null;
+  avatarKey: string | null;
 };
 
 type ProfileRow = {
@@ -38,6 +39,7 @@ type ProfileRow = {
   teacher_institution?: string;
   teacher_qualification?: string;
   username?: string | null;
+  avatar_key?: string | null;
 };
 
 function mapCredStatus(v: string | undefined): TeacherCredentialStatus {
@@ -59,6 +61,7 @@ function mapProfile(row: ProfileRow): Profile {
     teacherInstitution: row.teacher_institution ?? "",
     teacherQualification: row.teacher_qualification ?? "",
     username: row.username ? String(row.username) : null,
+    avatarKey: row.avatar_key ? String(row.avatar_key) : null,
   };
 }
 
@@ -67,14 +70,16 @@ export async function loadProfile(userId: string): Promise<Profile> {
   try {
     const rows = await sql<ProfileRow>`
       select user_id, learning_level, region, language_pref, onboarding_complete, account_role,
-        teacher_credential_status, teacher_credential_note, teacher_institution, teacher_qualification, username
+        teacher_credential_status, teacher_credential_note, teacher_institution, teacher_qualification,
+        username, avatar_key
       from profiles where user_id = ${userId}
     `;
     if (rows[0]) return mapProfile(rows[0]);
     const inserted = await sql<ProfileRow>`
       insert into profiles (user_id) values (${userId})
       returning user_id, learning_level, region, language_pref, onboarding_complete, account_role,
-        teacher_credential_status, teacher_credential_note, teacher_institution, teacher_qualification, username
+        teacher_credential_status, teacher_credential_note, teacher_institution, teacher_qualification,
+        username, avatar_key
     `;
     return mapProfile(inserted[0]);
   } catch {
@@ -220,6 +225,27 @@ export const setUsername = createServerFn({ method: "POST" })
       const msg = e instanceof Error ? e.message : String(e);
       if (/unique|duplicate/i.test(msg)) throw new Error("That username is already taken.");
       throw e instanceof Error ? e : new Error("Could not set username");
+    }
+    return loadProfile(context.userId);
+  });
+
+export const setAvatar = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((input: { avatarKey: string }) => {
+    const key = (input.avatarKey || "").trim().slice(0, 40);
+    if (!key) throw new Error("Choose a picture");
+    return { avatarKey: key };
+  })
+  .handler(async ({ context, data }): Promise<Profile> => {
+    const sql = await getSql();
+    try {
+      await sql`
+        insert into profiles (user_id, avatar_key, updated_at)
+        values (${context.userId}, ${data.avatarKey}, now())
+        on conflict (user_id) do update set avatar_key = excluded.avatar_key, updated_at = now()
+      `;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error("Could not save picture");
     }
     return loadProfile(context.userId);
   });
