@@ -3,7 +3,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { MobileNav, SiteFooter, SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
-import { FIELD_SLUGS } from "@/lib/sciences-types";
 import { FIELDS } from "@/lib/sciences";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import {
@@ -17,10 +16,13 @@ import {
   saveTeacherLesson,
   type TeacherLessonRow,
 } from "@/lib/server/teacher-lessons";
+import {
+  factCheckTeacherLesson,
+  integrateTeacherWithLongform,
+  type FactCheckReport,
+} from "@/lib/server/teacher-review";
 
-export const Route = createFileRoute("/teach")({
-  component: TeachPage,
-});
+export const Route = createFileRoute("/teach")({ component: TeachPage });
 
 const emptyForm = {
   fieldSlug: "ecology",
@@ -30,8 +32,19 @@ const emptyForm = {
   whyItMatters: "",
   body: "",
   minutes: 40,
-  published: true,
+  published: false,
 };
+
+function conceptIdFromTitle(title: string, explicit: string) {
+  return (
+    explicit.trim() ||
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 48)
+  );
+}
 
 function TeachPage() {
   const { user, isPending } = useCurrentUserState();
@@ -39,53 +52,119 @@ function TeachPage() {
   const [mine, setMine] = useState<TeacherLessonRow[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
+  const [checkBusy, setCheckBusy] = useState(false);
+  const [integrateBusy, setIntegrateBusy] = useState(false);
+  const [report, setReport] = useState<FactCheckReport | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    getProfile()
-      .then(setProfile)
-      .catch(() => setProfile(null));
+    getProfile().then(setProfile).catch(() => setProfile(null));
   }, [user]);
 
   useEffect(() => {
     if (!user || profile?.accountRole !== "teacher") return;
-    listMyTeacherLessons()
-      .then(setMine)
-      .catch(() => setMine([]));
+    listMyTeacherLessons().then(setMine).catch(() => setMine([]));
   }, [user, profile?.accountRole]);
+
+  async function ensureDraftSaved(conceptId: string, published: boolean) {
+    await saveTeacherLesson({
+      data: {
+        fieldSlug: form.fieldSlug,
+        moduleName: form.moduleName,
+        conceptId,
+        title: form.title,
+        whyItMatters: form.whyItMatters,
+        body: form.body,
+        keyIdeas: [],
+        objectives: [],
+        terms: [],
+        checkQuestions: [],
+        pitfalls: [],
+        minutes: form.minutes,
+        published,
+      },
+    });
+  }
+
+  async function onFactCheck() {
+    const conceptId = conceptIdFromTitle(form.title, form.conceptId);
+    if (!form.title.trim() || form.body.trim().length < 40) {
+      toast("Title and a substantial body (40+ characters) are required");
+      return;
+    }
+    setCheckBusy(true);
+    setReport(null);
+    try {
+      await ensureDraftSaved(conceptId, false);
+      const r = await factCheckTeacherLesson({
+        data: {
+          fieldSlug: form.fieldSlug,
+          conceptId,
+          title: form.title,
+          body: form.body,
+          whyItMatters: form.whyItMatters,
+        },
+      });
+      setReport(r);
+      setForm((f) => ({ ...f, conceptId }));
+      toast(`Fact-check ${r.verdict.toUpperCase()} (score ${r.score})`);
+      setMine(await listMyTeacherLessons());
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Fact-check failed");
+    } finally {
+      setCheckBusy(false);
+    }
+  }
+
+  async function onIntegrate() {
+    const conceptId = conceptIdFromTitle(form.title, form.conceptId);
+    if (!report || report.verdict !== "pass") {
+      toast("Integrate only after a PASS fact-check");
+      return;
+    }
+    setIntegrateBusy(true);
+    try {
+      await ensureDraftSaved(conceptId, false);
+      const out = await integrateTeacherWithLongform({
+        data: {
+          fieldSlug: form.fieldSlug,
+          conceptId,
+          title: form.title,
+          body: form.body,
+          whyItMatters: form.whyItMatters,
+        },
+      });
+      toast(`Integrated (~${out.integratedWords.toLocaleString()} words)`);
+      setMine(await listMyTeacherLessons());
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Integration failed");
+    } finally {
+      setIntegrateBusy(false);
+    }
+  }
 
   async function onSave(e: FormEvent) {
     e.preventDefault();
+    const conceptId = conceptIdFromTitle(form.title, form.conceptId);
+    if (form.published) {
+      if (!report || report.verdict !== "pass") {
+        toast("Run the fact-checker and get PASS before publishing");
+        return;
+      }
+      if (profile?.teacherCredentialStatus !== "verified") {
+        toast("Only verified teachers can publish");
+        return;
+      }
+    }
     setBusy(true);
     try {
-      const conceptId =
-        form.conceptId.trim() ||
-        form.title
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "")
-          .slice(0, 48);
-      await saveTeacherLesson({
-        data: {
-          fieldSlug: form.fieldSlug,
-          moduleName: form.moduleName,
-          conceptId,
-          title: form.title,
-          whyItMatters: form.whyItMatters,
-          body: form.body,
-          keyIdeas: [],
-          objectives: [],
-          terms: [],
-          checkQuestions: [],
-          pitfalls: [],
-          minutes: form.minutes,
-          published: form.published,
-        },
-      });
-      toast("Subtopic published");
-      const rows = await listMyTeacherLessons();
-      setMine(rows);
-      setForm({ ...emptyForm, fieldSlug: form.fieldSlug });
+      await ensureDraftSaved(conceptId, form.published);
+      toast(form.published ? "Lesson published" : "Draft saved");
+      setMine(await listMyTeacherLessons());
+      if (form.published) {
+        setForm({ ...emptyForm, fieldSlug: form.fieldSlug });
+        setReport(null);
+      } else setForm((f) => ({ ...f, conceptId }));
     } catch (err) {
       toast(err instanceof Error ? err.message : "Could not save");
     } finally {
@@ -95,10 +174,7 @@ function TeachPage() {
 
   if (isPending) {
     return (
-      <div className="flex min-h-dvh flex-col">
-        <SiteHeader solid />
-        <main className="mx-auto max-w-xl px-4 py-20 text-muted">Loading…</main>
-      </div>
+      <div className="flex min-h-dvh items-center justify-center text-sm text-muted">Loading\u2026</div>
     );
   }
 
@@ -106,93 +182,98 @@ function TeachPage() {
     return (
       <div className="flex min-h-dvh flex-col">
         <SiteHeader solid />
-        <main className="mx-auto max-w-xl px-4 py-20 text-center">
-          <h1 className="text-3xl font-semibold">Teach on Lumen</h1>
-          <p className="mt-3 text-sm text-muted">Sign in to submit credentials and publish subtopics.</p>
-          <Button asChild className="mt-6">
-            <Link to="/login">Sign in</Link>
-          </Button>
+        <main className="mx-auto max-w-lg flex-1 px-4 py-16 text-center">
+          <h1 className="text-3xl font-semibold">Teach</h1>
+          <p className="mt-3 text-sm text-muted">Sign in to submit credentials and publish.</p>
+          <Link to="/login" className="mt-6 inline-block text-primary hover:underline">
+            Sign in
+          </Link>
         </main>
+        <MobileNav />
       </div>
     );
   }
 
-  if (profile?.accountRole !== "teacher") {
+  if (profile && profile.accountRole !== "teacher") {
     return (
       <TeacherCredentialGate
         busy={busy}
         setBusy={setBusy}
         onDone={(p) => {
           setProfile(p);
-          toast("Credentials submitted. You can publish subtopics.");
+          toast("Credentials submitted");
         }}
       />
     );
   }
 
-  if (profile.teacherCredentialStatus === "rejected") {
+  if (profile?.teacherCredentialStatus === "rejected") {
     return (
       <div className="flex min-h-dvh flex-col">
         <SiteHeader solid />
-        <main className="mx-auto max-w-xl px-4 py-20 text-center">
-          <h1 className="text-3xl font-semibold">Credentials not accepted</h1>
-          <p className="mt-3 text-sm text-muted">Contact administrators if this is an error.</p>
+        <main className="mx-auto max-w-lg flex-1 px-4 py-16">
+          <h1 className="text-2xl font-semibold">Teaching access revoked</h1>
+          <p className="mt-3 text-sm text-muted">
+            Credentials rejected. Publishing disabled; prior lessons removed.
+          </p>
         </main>
+        <MobileNav />
       </div>
     );
   }
 
+  const canPublish =
+    profile?.teacherCredentialStatus === "verified" && report?.verdict === "pass";
+
   return (
     <div className="flex min-h-dvh flex-col pb-16 sm:pb-0">
       <SiteHeader solid />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10 sm:px-6">
         <h1 className="text-3xl font-semibold tracking-tight">Teach</h1>
-        <p className="mt-3 text-sm text-muted">
-          Add a <strong>new subtopic</strong> to any science. Published items appear on that subject
-          page.
+        <p className="mt-2 text-sm text-muted">
+          Status: <strong className="capitalize">{profile?.teacherCredentialStatus || "\u2026"}</strong>.
+          Workflow: write \u2192 fact-check \u2192 integrate (on PASS) \u2192 publish when verified.
         </p>
 
-        <form onSubmit={(e) => void onSave(e)} className="mt-10 space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm">
-              <span className="text-muted">Subject</span>
-              <select
-                className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2"
-                value={form.fieldSlug}
-                onChange={(e) => setForm({ ...form, fieldSlug: e.target.value })}
-              >
-                {FIELD_SLUGS.map((s) => (
-                  <option key={s} value={s}>
-                    {FIELDS.find((f) => f.slug === s)?.name ?? s}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-sm">
-              <span className="text-muted">Module</span>
-              <input
-                className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2"
-                value={form.moduleName}
-                onChange={(e) => setForm({ ...form, moduleName: e.target.value })}
-              />
-            </label>
-          </div>
+        <form onSubmit={(e) => void onSave(e)} className="mt-8 space-y-4">
           <label className="block text-sm">
-            <span className="text-muted">Title</span>
-            <input
-              required
+            <span className="text-muted">Science field</span>
+            <select
               className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              value={form.fieldSlug}
+              onChange={(e) => setForm({ ...form, fieldSlug: e.target.value })}
+            >
+              {FIELDS.map((f) => (
+                <option key={f.slug} value={f.slug}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm">
+            <span className="text-muted">Module</span>
+            <input
+              className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2"
+              value={form.moduleName}
+              onChange={(e) => setForm({ ...form, moduleName: e.target.value })}
             />
           </label>
           <label className="block text-sm">
-            <span className="text-muted">Subtopic id (optional)</span>
+            <span className="text-muted">Title</span>
             <input
               className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              required
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="text-muted">Concept id (optional)</span>
+            <input
+              className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-xs"
               value={form.conceptId}
               onChange={(e) => setForm({ ...form, conceptId: e.target.value })}
-              placeholder="auto from title"
+              placeholder="eco-food"
             />
           </label>
           <label className="block text-sm">
@@ -205,53 +286,123 @@ function TeachPage() {
             />
           </label>
           <label className="block text-sm">
-            <span className="text-muted">Full lesson body</span>
+            <span className="text-muted">Lesson body</span>
             <textarea
-              required
-              className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2"
+              className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-sm"
               rows={12}
               value={form.body}
-              onChange={(e) => setForm({ ...form, body: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, body: e.target.value });
+                setReport(null);
+              }}
+              required
             />
           </label>
+
+          <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+            <Button type="button" variant="secondary" disabled={checkBusy} onClick={() => void onFactCheck()}>
+              {checkBusy ? "Checking\u2026" : "1 \u00b7 Run fact-checker"}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={integrateBusy || report?.verdict !== "pass"}
+              onClick={() => void onIntegrate()}
+            >
+              {integrateBusy ? "Integrating\u2026" : "2 \u00b7 Integrate with academy lesson"}
+            </Button>
+          </div>
+
+          {report ? (
+            <div
+              className={
+                "rounded-lg border p-4 text-sm " +
+                (report.verdict === "pass"
+                  ? "border-green-700/40 bg-green-50 dark:bg-green-950/20"
+                  : report.verdict === "fail"
+                    ? "border-red-700/40 bg-red-50 dark:bg-red-950/20"
+                    : "border-amber-700/40 bg-amber-50 dark:bg-amber-950/20")
+              }
+            >
+              <p className="font-semibold uppercase tracking-wide">
+                Verdict: {report.verdict} \u00b7 score {report.score}/100
+              </p>
+              <p className="mt-2 text-muted">{report.summary}</p>
+              {report.strengths.length > 0 ? (
+                <ul className="mt-2 list-disc pl-5">
+                  {report.strengths.map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              ) : null}
+              {report.issues.length > 0 ? (
+                <ul className="mt-3 space-y-2">
+                  {report.issues.map((iss, i) => (
+                    <li key={i} className="rounded border border-border/60 p-2">
+                      <span className="text-xs font-semibold uppercase">{iss.severity}</span>
+                      <p className="font-medium">{iss.claim}</p>
+                      <p className="text-muted">{iss.explanation}</p>
+                      {iss.suggestion ? (
+                        <p className="text-xs text-subtle">Fix: {iss.suggestion}</p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
+
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={form.published}
+              disabled={!canPublish && !form.published}
               onChange={(e) => setForm({ ...form, published: e.target.checked })}
             />
-            Published
+            Publish (verified credentials + fact-check PASS)
           </label>
+
           <Button type="submit" disabled={busy}>
-            {busy ? "Saving…" : "Publish subtopic"}
+            {busy ? "Saving\u2026" : form.published ? "3 \u00b7 Publish" : "Save draft"}
           </Button>
         </form>
 
         <section className="mt-12">
-          <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Your subtopics</h2>
+          <h2 className="text-sm font-semibold uppercase text-muted">Your lessons</h2>
           <ul className="mt-3 space-y-2">
-            {mine.map((r) => (
-              <li
-                key={r.id}
-                className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm"
-              >
-                <span>
-                  {r.title} · {r.field_slug}/{r.concept_id}
-                </span>
-                <button
-                  type="button"
-                  className="text-muted hover:text-fg"
-                  onClick={() => {
-                    if (!confirm("Delete?")) return;
-                    deleteTeacherLesson({ data: { id: r.id } })
-                      .then(() => setMine((m) => m.filter((x) => x.id !== r.id)))
-                      .catch(() => toast("Could not delete"));
-                  }}
+            {mine.length === 0 ? (
+              <li className="text-sm text-muted">No submissions yet.</li>
+            ) : (
+              mine.map((row) => (
+                <li
+                  key={row.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm"
                 >
-                  Delete
-                </button>
-              </li>
-            ))}
+                  <span>
+                    {row.title}{" "}
+                    <span className="text-xs text-muted">
+                      {row.field_slug}/{row.concept_id} \u00b7{" "}
+                      {row.published ? "published" : "draft"}
+                      {row.fact_check_status ? ` \u00b7 check:${row.fact_check_status}` : ""}
+                    </span>
+                  </span>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      deleteTeacherLesson({ data: { id: row.id } })
+                        .then(async () => {
+                          toast("Deleted");
+                          setMine(await listMyTeacherLessons());
+                        })
+                        .catch((e) => toast(e instanceof Error ? e.message : "Delete failed"))
+                    }
+                  >
+                    Delete
+                  </Button>
+                </li>
+              ))
+            )}
           </ul>
         </section>
       </main>
@@ -293,9 +444,7 @@ function TeacherCredentialGate({
       <SiteHeader solid />
       <main className="mx-auto max-w-lg flex-1 px-4 py-16">
         <h1 className="text-3xl font-semibold tracking-tight">Verify teaching credentials</h1>
-        <p className="mt-3 text-sm text-muted">
-          Institution and qualification are required before you can publish subtopics.
-        </p>
+        <p className="mt-3 text-sm text-muted">Institution and qualification required.</p>
         <div className="mt-8 space-y-4">
           <label className="block text-sm">
             <span className="text-muted">Institution</span>
@@ -306,7 +455,7 @@ function TeacherCredentialGate({
             />
           </label>
           <label className="block text-sm">
-            <span className="text-muted">Qualification / licence</span>
+            <span className="text-muted">Qualification</span>
             <input
               className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2"
               value={qualification}
@@ -314,7 +463,7 @@ function TeacherCredentialGate({
             />
           </label>
           <label className="block text-sm">
-            <span className="text-muted">Notes (optional)</span>
+            <span className="text-muted">Notes</span>
             <textarea
               className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2"
               rows={3}
@@ -323,7 +472,7 @@ function TeacherCredentialGate({
             />
           </label>
           <Button className="w-full" disabled={busy} onClick={() => void submit()}>
-            {busy ? "Submitting…" : "Submit credentials and open Teach"}
+            {busy ? "Submitting\u2026" : "Submit credentials"}
           </Button>
         </div>
       </main>
