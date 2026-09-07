@@ -13,7 +13,6 @@ const PUBLIC_LINKS = [
 
 const ACCOUNT_TOOLS = [
   { to: "/oracle", label: "Oracle" },
-  { to: "/syllabus", label: "Syllabi" },
   { to: "/messages", label: "Messages" },
 ] as const;
 
@@ -89,8 +88,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border/80">
       <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <p>Lumen is free. Lessons cite established research. Nothing is paywalled.</p>
-        <p className="text-subtle">Open literature · Oracle</p>
+        <p>Lumen is free. Lessons cite established research.</p>
       </div>
     </footer>
   );
@@ -102,10 +100,7 @@ export function MobileNav() {
     { to: "/explore" as const, label: "Sciences" },
     ...(isPending || user
       ? []
-      : [
-          { to: "/oracle" as const, label: "Oracle" },
-          { to: "/syllabus" as const, label: "Syllabi" },
-        ]),
+      : [{ to: "/oracle" as const, label: "Oracle" }]),
     ...(user
       ? [
           { to: "/oracle" as const, label: "Oracle" },
