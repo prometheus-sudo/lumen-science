@@ -85,22 +85,14 @@ export function SiteHeader({ solid = false }: { solid?: boolean }) {
 }
 
 export function SiteFooter() {
-  return (
-    <footer className="border-t border-border/80">
-      <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <p>Lumen is free. Lessons cite established research.</p>
-      </div>
-    </footer>
-  );
+  return <footer className="border-t border-border/80 py-6" aria-hidden="true" />;
 }
 
 export function MobileNav() {
   const { user, isPending } = useCurrentUserState();
   const items = [
     { to: "/explore" as const, label: "Sciences" },
-    ...(isPending || user
-      ? []
-      : [{ to: "/oracle" as const, label: "Oracle" }]),
+    ...(isPending || user ? [] : [{ to: "/oracle" as const, label: "Oracle" }]),
     ...(user
       ? [
           { to: "/oracle" as const, label: "Oracle" },
