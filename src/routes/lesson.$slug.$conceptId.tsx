@@ -85,21 +85,15 @@ function LessonPage() {
   }
 
   const teacherBody = teacher?.summary || "";
-  const shortBody = concept.summary || "";
+  const shortBody = concept.summary || concept.whyItMatters || "";
   const displayMarkdown = teacher ? teacherBody : longform || shortBody;
-  const source = teacher
-    ? "Teacher lesson (overrides built-in)"
-    : longform
-      ? `Longform lesson (~${longformWords} words)`
-      : "Core outline";
-
   const paragraphs = displayMarkdown.split(/\n\n+/).filter(Boolean);
   const ideas = concept.keyIdeas ?? [];
 
   return (
     <div className="flex min-h-dvh flex-col pb-16 sm:pb-0">
       <SiteHeader solid />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
         <Link
           to="/fields/$slug"
           params={{ slug }}
@@ -108,15 +102,13 @@ function LessonPage() {
           \u2190 {field.name}
         </Link>
         <h1 className="mt-4 font-display text-4xl tracking-tight">{concept.title}</h1>
-        <p className="mt-2 text-sm text-muted">
-          {concept.module} \u00b7 ~{concept.minutes ?? 25} min \u00b7 {source}
-        </p>
+        <p className="mt-3 text-base text-muted">{concept.whyItMatters}</p>
 
-        <div className="mt-6 rounded-lg border border-border bg-surface p-4 text-sm">
-          <p className="font-medium">At a glance</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
+        <section className="mt-8 rounded-lg border border-border bg-surface p-4">
+          <h2 className="text-xs font-medium uppercase tracking-wide text-muted">At a glance</h2>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-fg">
             <li>
-              <strong>Topic:</strong> {concept.title} ({field.name})
+              <strong>Topic:</strong> {concept.title}
             </li>
             {concept.whyItMatters ? (
               <li>
@@ -124,17 +116,10 @@ function LessonPage() {
               </li>
             ) : null}
             <li>
-              <strong>Sources:</strong> open-access literature via the Library; teacher lessons when
-              published; curated educational videos where mapped.
+              <strong>Sources:</strong> open-access literature via the Library; curriculum summaries.
             </li>
           </ul>
-        </div>
-
-        {!longform && !teacher ? (
-          <p className="mt-4 rounded-md border border-border bg-surface px-3 py-2 text-sm text-muted">
-            Extended text not loaded. Copy longform into public folder, then refresh.
-          </p>
-        ) : null}
+        </section>
 
         {(() => {
           const vids = videosForConcept(slug, conceptId);
@@ -142,10 +127,6 @@ function LessonPage() {
           return (
             <section className="mt-8">
               <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Videos</h2>
-              <p className="mt-1 text-xs text-subtle">
-                Open educational clips (Veritasium, The Efficient Engineer, The Organic Chemistry
-                Tutor). Opens on YouTube.
-              </p>
               <ul className="mt-4 space-y-6">
                 {vids.map((v) => (
                   <li key={v.youtubeId} className="rounded-lg border border-border bg-surface p-3">
@@ -168,7 +149,6 @@ function LessonPage() {
                       {v.title}
                     </a>
                     <span className="text-xs text-muted"> \u00b7 {v.channel}</span>
-                    {v.note ? <p className="text-xs text-subtle">{v.note}</p> : null}
                   </li>
                 ))}
               </ul>
@@ -177,8 +157,7 @@ function LessonPage() {
         })()}
 
         <article className="mt-10">
-          <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Full lesson</h2>
-          <div className="mt-4 space-y-4 text-base leading-relaxed">
+          <div className="space-y-4 text-base leading-relaxed">
             {paragraphs.map((p, i) => {
               if (p.startsWith("# "))
                 return (
@@ -222,9 +201,9 @@ function LessonPage() {
 
         {teacher ? (
           <section className="mt-10 rounded-lg border border-border p-4">
-            <h2 className="text-sm font-semibold">Report teacher content</h2>
+            <h2 className="text-sm font-semibold">Report content</h2>
             <p className="mt-1 text-xs text-muted">
-              If this teacher lesson has wrong or unsafe claims, send an alert to moderators.
+              If this lesson has wrong or unsafe claims, send an alert.
             </p>
             <Button
               className="mt-3"
@@ -250,10 +229,9 @@ function LessonPage() {
         ) : null}
 
         <section className="mt-12 border-t border-border pt-10" id="topic-quiz">
-          <h2 className="text-lg font-semibold">Quiz \u00b7 this subtopic</h2>
+          <h2 className="text-lg font-semibold">Quiz</h2>
           <p className="mt-1 text-sm text-muted">
-            Questions are built from this topic\u2019s key ideas in {field.name}. Check your understanding
-            when you finish the lesson.
+            Questions adapt to your level and region when you are signed in.
           </p>
           <Button
             className="mt-4"
@@ -297,9 +275,7 @@ function LessonPage() {
                                     : "border-border opacity-70"
                                 : "border-border hover:bg-bg")
                             }
-                            onClick={() =>
-                              setPicked((prev) => ({ ...prev, [q.id]: i }))
-                            }
+                            onClick={() => setPicked((prev) => ({ ...prev, [q.id]: i }))}
                           >
                             {c}
                           </button>
