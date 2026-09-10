@@ -10,6 +10,24 @@ import { Button } from "@/components/ui/button";
 import { videosForConcept, youtubeEmbedUrl, youtubeWatchUrl } from "@/lib/topic-videos";
 import { reportTeacherContent } from "@/lib/server/messages";
 
+/** Remove internal metadata lines from lesson markdown before display. */
+function stripLessonMeta(md: string): string {
+  return md
+    .split("\n")
+    .filter((line) => {
+      const t = line.trim();
+      if (/^\*\*Field:\*\*/i.test(t)) return false;
+      if (/^\*\*Module:\*\*/i.test(t)) return false;
+      if (/^\*\*Concept id:\*\*/i.test(t)) return false;
+      if (/^\*\*Target depth:\*\*/i.test(t)) return false;
+      if (/^\*\*Override:\*\*/i.test(t)) return false;
+      if (/\*\*Field:\*\*.*\*\*Module:\*\*.*\*\*Concept id:\*\*/i.test(t)) return false;
+      return true;
+    })
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
 export const Route = createFileRoute("/lesson/$slug/$conceptId")({
   component: LessonPage,
 });
@@ -86,7 +104,7 @@ function LessonPage() {
 
   const teacherBody = teacher?.summary || "";
   const shortBody = concept.summary || concept.whyItMatters || "";
-  const displayMarkdown = teacher ? teacherBody : longform || shortBody;
+  const displayMarkdown = stripLessonMeta(teacher ? teacherBody : longform || shortBody);
   const paragraphs = displayMarkdown.split(/\n\n+/).filter(Boolean);
   const ideas = concept.keyIdeas ?? [];
 
@@ -192,11 +210,7 @@ function LessonPage() {
         ) : null}
 
         {teacherAuthor ? (
-          <TeacherAuthorByline
-            author={teacherAuthor}
-            fieldSlug={slug}
-            conceptId={conceptId}
-          />
+          <TeacherAuthorByline author={teacherAuthor} fieldSlug={slug} conceptId={conceptId} />
         ) : null}
 
         {teacher ? (
