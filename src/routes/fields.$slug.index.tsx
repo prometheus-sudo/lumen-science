@@ -91,13 +91,6 @@ function FieldPage() {
 
         <section className="mt-14">
           <h2 className="font-display text-2xl tracking-tight">Lessons</h2>
-          <p className="mt-1 text-sm text-muted">
-            Open a topic for the full lesson. Teachers can add new subtopics from{" "}
-            <Link to="/teach" className="text-primary hover:underline">
-              Teach
-            </Link>
-            .
-          </p>
           <div className="mt-6 space-y-10">
             {modules.map(({ module, concepts }) => (
               <div key={module}>
@@ -144,7 +137,6 @@ function FieldPage() {
 
         <section className="mt-14">
           <h2 className="font-display text-2xl tracking-tight">From the literature</h2>
-          <p className="mt-1 text-sm text-muted">Open-access records for this field.</p>
           <div className="mt-5 space-y-3">
             {papers === null && (
               <>
