@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { authClient, authEnabled } from "@/lib/auth/client";
 import { SiteMark } from "@/components/site-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { authClient, authEnabled } from "@/lib/auth/client";
 
 export const Route = createFileRoute("/login")({ component: Login });
 
@@ -72,25 +72,20 @@ function Login() {
           {mode === "signin" ? "Sign in" : "Create account"}
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Free Lumen accounts only. Your syllabus, Oracle chats, and reading level stay on this
-          site — this is not a Grok or xAI login.
+          Free Lumen accounts. Your syllabus, Oracle chats, and reading level stay on this site.
         </p>
 
         {!authEnabled ? (
-          <p className="mt-8 text-sm text-muted">
-            Sign-in is disabled (<code className="text-xs">VITE_AUTH_ENABLED=false</code>). Remove
-            that flag to use real accounts.
-          </p>
+          <p className="mt-8 text-sm text-muted">Sign-in is not available in this environment.</p>
         ) : (
           <form onSubmit={(e) => void onSubmit(e)} className="mt-8 space-y-4">
             {mode === "signup" ? (
               <label className="block text-sm">
-                <span className="text-muted">Display name</span>
+                <span className="text-muted">Name</span>
                 <Input
                   className="mt-1"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
                   autoComplete="name"
                 />
               </label>
@@ -100,66 +95,57 @@ function Login() {
               <Input
                 className="mt-1"
                 type="email"
-                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
                 autoComplete="email"
+                required
               />
             </label>
             <label className="block text-sm">
-              <span className="text-muted">Password (min 8 characters)</span>
+              <span className="text-muted">Password</span>
               <Input
                 className="mt-1"
                 type="password"
-                required
-                minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                required
+                minLength={8}
               />
             </label>
             <Button type="submit" className="w-full" disabled={busy}>
-              {busy
-                ? "Please wait…"
-                : mode === "signin"
-                  ? "Sign in to Lumen"
-                  : "Create Lumen account"}
+              {busy ? "Please wait\u2026" : mode === "signin" ? "Sign in" : "Create account"}
             </Button>
           </form>
         )}
 
-        {authEnabled ? (
-          <p className="mt-6 text-center text-sm text-muted">
-            {mode === "signin" ? (
-              <>
-                New here?{" "}
-                <button
-                  type="button"
-                  className="font-medium text-primary hover:underline"
-                  onClick={() => setMode("signup")}
-                >
-                  Create an account
-                </button>
-              </>
-            ) : (
-              <>
-                Already have an account?{" "}
-                <button
-                  type="button"
-                  className="font-medium text-primary hover:underline"
-                  onClick={() => setMode("signin")}
-                >
-                  Sign in
-                </button>
-              </>
-            )}
-          </p>
-        ) : null}
-
-        <p className="mt-8 text-xs leading-relaxed text-subtle">
-          Accounts are stored for this Lumen app only. Google/X via the Grok broker are not used on
-          this login page.
+        <p className="mt-6 text-center text-sm text-muted">
+          {mode === "signin" ? (
+            <>
+              No account?{" "}
+              <button
+                type="button"
+                className="text-primary hover:underline"
+                onClick={() => setMode("signup")}
+              >
+                Create one
+              </button>
+            </>
+          ) : (
+            <>
+              Already registered?{" "}
+              <button
+                type="button"
+                className="text-primary hover:underline"
+                onClick={() => setMode("signin")}
+              >
+                Sign in
+              </button>
+            </>
+          )}
+        </p>
+        <p className="mt-4 text-center text-xs text-subtle">
+          Accounts are stored for this Lumen app only.
         </p>
       </div>
     </main>
