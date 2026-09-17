@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
 
-export type TeacherMessage = {
+export type ChatMessage = {
   id: number;
   thread_id: string;
   field_slug: string | null;
@@ -15,58 +15,62 @@ export type TeacherMessage = {
   to_username?: string | null;
 };
 
+/** @deprecated use ChatMessage */
+export type TeacherMessage = ChatMessage;
+
 function threadKey(a: string, b: string) {
   return [a, b].sort().join(":");
 }
 
 async function usernameMap(sql: Awaited<ReturnType<typeof getSql>>, ids: string[]) {
   const unique = [...new Set(ids.filter(Boolean))];
-  const map = new Map<string, string | null>();
-  if (!unique.length) return map;
+  if (!unique.length) return new Map<string, string>();
   try {
-    for (const id of unique) {
-      const rows = await sql<{ username: string | null }>`
-        select username from profiles where user_id = ${id} limit 1
-      `;
-      map.set(id, rows[0]?.username ? String(rows[0].username) : null);
-    }
+    const rows = await sql<{ user_id: string; username: string | null }>`
+      select user_id, username from profiles where user_id = any(${unique})
+    `;
+    return new Map(rows.map((r) => [r.user_id, r.username || ""]));
   } catch {
-    /* ignore */
+    return new Map<string, string>();
   }
-  return map;
 }
 
-export const listTeachers = createServerFn({ method: "GET" })
+/** Directory of any Lumen user who set a username (students + teachers). */
+export const listDirectoryUsers = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .handler(async () => {
+  .handler(async ({ context }) => {
     const sql = await getSql();
     try {
-      const rows = await sql<{ user_id: string; username: string | null }>`
-        select user_id, username from profiles
-        where account_role = 'teacher' and username is not null and username <> ''
+      const rows = await sql<{ user_id: string; username: string | null; account_role: string | null }>`
+        select user_id, username, account_role from profiles
+        where username is not null and username <> '' and user_id <> ${context.userId}
         order by username
-        limit 50
+        limit 200
       `;
       return rows.map((r) => ({
         userId: r.user_id,
         username: String(r.username),
         label: `@${r.username}`,
+        role: r.account_role === "teacher" ? "teacher" : "student",
       }));
     } catch {
       return [];
     }
   });
 
+/** Keep export for older UI imports */
+export const listTeachers = listDirectoryUsers;
+
 export const listMyMessages = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const sql = await getSql();
     try {
-      const rows = await sql<TeacherMessage>`
+      const rows = await sql<ChatMessage>`
         select * from teacher_messages
         where from_user_id = ${context.userId} or to_user_id = ${context.userId}
-        order by created_at desc
-        limit 100
+        order by created_at asc
+        limit 500
       `;
       const map = await usernameMap(
         sql,
@@ -93,11 +97,11 @@ export const sendTeacherMessage = createServerFn({ method: "POST" })
       conceptId?: string;
     }) => {
       const body = (input.body || "").trim();
-      if (body.length < 2) throw new Error("Message too short");
+      if (body.length < 1) throw new Error("Message too short");
       if (body.length > 4000) throw new Error("Message too long");
       const toUsername = (input.toUsername || "").trim().toLowerCase().replace(/^@/, "");
       const toUserId = (input.toUserId || "").trim();
-      if (!toUsername && !toUserId) throw new Error("Choose a teacher by @username");
+      if (!toUsername && !toUserId) throw new Error("Choose someone by @username");
       return {
         toUsername: toUsername || null,
         toUserId: toUserId || null,
@@ -111,16 +115,15 @@ export const sendTeacherMessage = createServerFn({ method: "POST" })
     const sql = await getSql();
     let toUserId = data.toUserId;
     if (data.toUsername) {
-      const rows = await sql<{ user_id: string; account_role: string | null }>`
-        select user_id, account_role from profiles
+      const rows = await sql<{ user_id: string }>`
+        select user_id from profiles
         where lower(username) = ${data.toUsername}
         limit 1
       `;
-      if (!rows[0]) throw new Error("No teacher with that username");
-      if (rows[0].account_role !== "teacher") throw new Error("That user is not a teacher");
+      if (!rows[0]) throw new Error("No Lumen user with that username");
       toUserId = rows[0].user_id;
     }
-    if (!toUserId) throw new Error("Choose a teacher by @username");
+    if (!toUserId) throw new Error("Choose someone by @username");
     if (toUserId === context.userId) throw new Error("Cannot message yourself");
     const tid = threadKey(context.userId, toUserId);
     await sql`
@@ -154,5 +157,5 @@ export const reportTeacherContent = createServerFn({ method: "POST" })
       insert into content_reports (reporter_user_id, field_slug, concept_id, teacher_lesson_id, reason)
       values (${context.userId}, ${data.fieldSlug}, ${data.conceptId}, ${data.teacherLessonId}, ${data.reason})
     `;
-    return { ok: true, message: "Report received. Moderators will review the teacher content." };
+    return { ok: true, message: "Report received. Moderators will review." };
   });
