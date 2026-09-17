@@ -36,7 +36,7 @@ async function requireTeacher(userId: string) {
     throw new Error("Teacher role required. Submit credentials on the Teach page.");
   }
   if (profile.teacherCredentialStatus === "rejected") {
-    throw new Error("Credentials rejected \u2014 fact-check and publishing are disabled.");
+    throw new Error("Credentials rejected — fact-check and publishing are disabled.");
   }
   return profile;
 }
@@ -295,7 +295,7 @@ Return ONLY JSON:
 {
   "bridge": "markdown 300-800 words introducing the combined lesson",
   "teacherCore": "cleaned teacher narrative (preserve voice; fix only clear errors)",
-  "alignmentNotes": ["teacher point \u2192 longform section"],
+  "alignmentNotes": ["teacher point → longform section"],
   "warnings": ["residual risks"]
 }
 Never invent citations. Prefer established science if conflict; note it in warnings.`;
@@ -343,7 +343,7 @@ Never invent citations. Prefer established science if conflict; note it in warni
 
     const alignmentBlock =
       alignmentNotes.length > 0
-        ? "\n\n### Alignment map (teacher \u2192 extended lesson)\n\n" +
+        ? "\n\n### Alignment map (teacher → extended lesson)\n\n" +
           alignmentNotes.map((n) => `- ${n}`).join("\n")
         : "";
     const warningBlock =
@@ -354,8 +354,10 @@ Never invent citations. Prefer established science if conflict; note it in warni
     const integrated = [
       `# ${data.title}`,
       "",
-      `**Integrated lesson** \u00b7 \`${data.fieldSlug}\` / \`${data.conceptId}\`,
-      `**Sources:** teacher submission (fact-checked) + Lumen extended lesson (${longform.words.toLocaleString()} words)`,
+      "**Integrated lesson** · " + data.fieldSlug + " / " + data.conceptId,
+      "**Sources:** teacher submission (fact-checked) + Lumen extended lesson (" +
+        String(longform.words.toLocaleString()) +
+        " words)",
       "",
       "---",
       "",
